@@ -1,8 +1,8 @@
 package by.slowar.appsupdater
 
 import androidx.multidex.MultiDexApplication
-import by.slowar.appsupdater.di.AppComponent
-import by.slowar.appsupdater.di.DaggerAppComponent
+import by.slowar.appsupdater.di.components.AppComponent
+import by.slowar.appsupdater.di.components.DaggerAppComponent
 
 class UpdaterApp : MultiDexApplication() {
 

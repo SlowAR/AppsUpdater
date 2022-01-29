@@ -1,70 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <ImageView
-        android:id="@+id/appIcon"
-        android:layout_width="@dimen/app_icon_size"
-        android:layout_height="@dimen/app_icon_size"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:contentDescription="@string/app_icon"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_gallery" />
+    <data class="by.slowar.appsupdater.data.AppUpdateItemBinding">
 
-    <TextView
-        android:id="@+id/appNameText"
-        android:layout_width="0dp"
+        <import type="android.view.View" />
+
+        <variable
+            name="appItemState"
+            type="by.slowar.appsupdater.ui.updates_list.states.AppItemUiState" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        app:layout_constraintBottom_toTopOf="@+id/updateSizeText"
-        app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
-        app:layout_constraintStart_toEndOf="@+id/appIcon"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="spread"
-        tools:text="App name" />
+        android:animateLayoutChanges="true">
 
-    <TextView
-        android:id="@+id/updateSizeText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
-        app:layout_constraintStart_toStartOf="@+id/appNameText"
-        app:layout_constraintTop_toBottomOf="@+id/appNameText"
-        tools:text="Update size (Mb)" />
+        <ImageView
+            android:id="@+id/appIcon"
+            android:layout_width="@dimen/app_icon_size"
+            android:layout_height="@dimen/app_icon_size"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="@string/app_icon"
+            app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@android:drawable/ic_menu_gallery" />
 
-    <Button
-        android:id="@+id/updateButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="9dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="9dp"
-        android:text="@string/update"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <TextView
+            android:id="@+id/appNameText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@{appItemState.appName}"
+            app:layout_constraintBottom_toTopOf="@+id/updateSizeText"
+            app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
+            app:layout_constraintStart_toEndOf="@+id/appIcon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="spread"
+            tools:text="App name" />
 
-    <ImageButton
-        android:id="@+id/showInfoButton"
-        android:layout_width="@dimen/app_icon_size"
-        android:layout_height="@dimen/app_icon_size"
-        android:layout_marginEnd="8dp"
-        android:background="#00FFFFFF"
-        android:contentDescription="@string/show_update_info"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/updateButton"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_baseline_keyboard_arrow_down_24" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/updateSizeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@{appItemState.updateSize}"
+            app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
+            app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
+            app:layout_constraintStart_toStartOf="@+id/appNameText"
+            app:layout_constraintTop_toBottomOf="@+id/appNameText"
+            tools:text="Update size (Mb)" />
+
+        <ImageButton
+            android:id="@+id/showInfoButton"
+            android:layout_width="@dimen/app_icon_size"
+            android:layout_height="@dimen/app_icon_size"
+            android:layout_marginEnd="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/show_update_info"
+            app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
+            app:layout_constraintEnd_toStartOf="@+id/updateButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_baseline_keyboard_arrow_down_24" />
+
+        <Button
+            android:id="@+id/updateButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="9dp"
+            android:text="@string/update"
+            app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/bottomBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="updateSizeText,updateButton,showInfoButton,appIcon,appNameText" />
+
+        <TextView
+            android:id="@+id/updateInfoText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:text="@{appItemState.updateDescription}"
+            android:visibility="@{appItemState.descriptionVisible ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/bottomBarrier"
+            tools:text="Some update info of app" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
