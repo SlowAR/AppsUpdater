@@ -31,15 +31,25 @@ class UpdateAppListAdapter :
             binding.appItemState = appItemState
             binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
             binding.updateButton.setOnClickListener { appItemState.onUpdateAction }
+            binding.executePendingBindings()
         }
 
         private fun toggleDescriptionVisibility() {
             if (binding.updateInfoText.visibility == View.VISIBLE) {
-                binding.updateInfoText.visibility = View.GONE
+                hideDescriptionText()
             } else {
-                binding.updateInfoText.visibility = View.VISIBLE
+                showDescriptionText()
             }
+        }
+
+        private fun showDescriptionText() {
+            binding.updateInfoText.visibility = View.VISIBLE
             binding.showInfoButton.animate().rotation(180f)
+        }
+
+        private fun hideDescriptionText() {
+            binding.updateInfoText.visibility = View.GONE
+            binding.showInfoButton.animate().rotation(0f)
         }
     }
 

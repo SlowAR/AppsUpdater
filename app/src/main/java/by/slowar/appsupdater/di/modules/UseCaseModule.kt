@@ -11,7 +11,7 @@ import dagger.Provides
 class UseCaseModule {
 
     @Provides
-    fun provideCheckForUpdatesUseCase(@WorkingEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCase {
+    fun provideCheckForUpdatesUseCase(@FakeEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCase {
         return CheckForUpdatesUseCase(updaterRepository)
     }
 }

@@ -4,4 +4,6 @@
     <string name="update">Update</string>
     <string name="show_update_info">Show update info</string>
     <string name="app_icon">App icon</string>
+    <string name="unknown_error">Unknown error!</string>
+    <string name="apps_updates">Apps updates</string>
 </resources>

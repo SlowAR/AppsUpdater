@@ -3,6 +3,7 @@ package by.slowar.appsupdater.data.repositories.local
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.util.Log
+import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.LocalAppInfo
 import io.reactivex.Single
 import javax.inject.Inject
@@ -18,6 +19,9 @@ class InstalledAppsLocalDataSource @Inject constructor(private val packageManage
                 if (info.name == null) {
                     continue
                 }
+                if (emitter.isDisposed) {
+                    break
+                }
 
                 try {
                     val localAppInfo = LocalAppInfo(
@@ -27,7 +31,7 @@ class InstalledAppsLocalDataSource @Inject constructor(private val packageManage
                     )
                     list.add(localAppInfo)
                 } catch (e: Throwable) {
-                    Log.e("qweqwe", "loadInstalledApps: ${e.localizedMessage}")
+                    Log.e(Constants.LOG_TAG, "loadInstalledApps: ${e.localizedMessage}")
                 }
             }
 

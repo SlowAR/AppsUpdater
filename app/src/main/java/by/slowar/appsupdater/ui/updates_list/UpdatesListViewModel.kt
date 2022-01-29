@@ -5,14 +5,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import by.slowar.appsupdater.R
+import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.LocalAppInfo
-import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.domain.api.AppsRepository
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
 import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
@@ -25,9 +27,22 @@ class UpdatesListViewModel(
     private val _appsUiItems = MutableLiveData<List<AppItemUiState>>()
     val appsUiItems: LiveData<List<AppItemUiState>> = _appsUiItems
 
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    private val _errorStringId = MutableLiveData<Int>()
+    val errorStringId: LiveData<Int> = _errorStringId
+
     private var installedAppsList = listOf<LocalAppInfo>()
 
+    private var currentRequestDisposable: Disposable? = null
+
     fun checkForUpdates(forceRefresh: Boolean = false) {
+        if (currentRequestDisposable != null) {
+            return
+        }
+
+        _isLoading.value = true
         if (installedAppsList.isEmpty() || forceRefresh) {
             loadInstalledAppsList()
         } else {
@@ -36,7 +51,7 @@ class UpdatesListViewModel(
     }
 
     private fun getAppsForUpdate() {
-        val subscribe = checkForUpdatesUseCase.checkForUpdates(installedAppsList)
+        currentRequestDisposable = checkForUpdatesUseCase.checkForUpdates(installedAppsList)
             .subscribeOn(Schedulers.single())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
@@ -54,23 +69,41 @@ class UpdatesListViewModel(
                         ))
                     }
                     _appsUiItems.value = updateApps
+                    finishLoading()
                 },
-                {
+                { error ->
+                    finishLoading(error)
                 }
             )
     }
 
     private fun loadInstalledAppsList() {
-        val subscribe = appsRepository.loadInstalledApps()
+        currentRequestDisposable = appsRepository.loadInstalledApps()
             .subscribeOn(Schedulers.single())
             .subscribe(
                 {
                     installedAppsList = it
                     getAppsForUpdate()
                 },
-                {
+                { error ->
+                    finishLoading(error)
                 }
             )
+    }
+
+    private fun finishLoading(error: Throwable? = null) {
+        if (error != null) {
+            handleError(error)
+        }
+        currentRequestDisposable = null
+        _isLoading.value = false
+    }
+
+    private fun handleError(error: Throwable) {
+        Log.e(Constants.LOG_TAG, "loadInstalledAppsList: ${error.localizedMessage}")
+        when (error) {
+            else -> R.string.unknown_error
+        }
     }
 
     class Factory @Inject constructor(

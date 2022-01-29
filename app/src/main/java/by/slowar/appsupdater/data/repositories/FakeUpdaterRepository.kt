@@ -1,6 +1,7 @@
 package by.slowar.appsupdater.data.repositories
 
 import android.util.Log
+import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.domain.api.UpdaterRepository
@@ -30,6 +31,6 @@ class FakeUpdaterRepository @Inject constructor() : UpdaterRepository {
     }
 
     override fun updateApp(packageName: String) {
-        Log.e("qweqwe", "fake updateAppClick $packageName")
+        Log.e(Constants.LOG_TAG, "fake updateAppClick $packageName")
     }
 }

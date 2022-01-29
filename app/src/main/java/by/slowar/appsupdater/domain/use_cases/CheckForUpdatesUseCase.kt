@@ -1,6 +1,7 @@
 package by.slowar.appsupdater.domain.use_cases
 
 import android.util.Log
+import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.LocalAppInfo
 import by.slowar.appsupdater.data.models.UpdateAppData
 import by.slowar.appsupdater.domain.api.UpdaterRepository
@@ -18,7 +19,7 @@ class CheckForUpdatesUseCase @Inject constructor(private val updaterRepository: 
                         updaterRepository.checkForUpdate(appInfo.packageName).blockingGet()
                     updatesAppsList.add(updateAppData)
                 } catch (e: Throwable) {
-                    Log.e("qweqwe", "checkForUpdates: ${e.localizedMessage}")
+                    Log.e(Constants.LOG_TAG, "checkForUpdates: ${e.localizedMessage}")
                 }
             }
 
