@@ -10,6 +10,6 @@ class UpdaterApp : MultiDexApplication() {
 
     override fun onCreate() {
         super.onCreate()
-        appComponent = DaggerAppComponent.create()
+        appComponent = DaggerAppComponent.builder().packageManager(packageManager).build()
     }
 }

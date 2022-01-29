@@ -4,19 +4,32 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import by.slowar.appsupdater.domain.UpdaterRepository
+import by.slowar.appsupdater.data.models.LocalAppInfo
+import by.slowar.appsupdater.domain.api.AppsRepository
+import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
 import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
 import javax.inject.Inject
 
-class UpdatesListViewModel(private val updaterRepository: UpdaterRepository) : ViewModel() {
+class UpdatesListViewModel(
+    private val appsRepository: AppsRepository,
+    private val checkForUpdatesUseCase: CheckForUpdatesUseCase
+) : ViewModel() {
 
     private val _appsUiItems = MutableLiveData<List<AppItemUiState>>()
     val appsUiItems: LiveData<List<AppItemUiState>> = _appsUiItems
 
-    class Factory @Inject constructor(private val updaterRepository: UpdaterRepository) :
+    private var installedAppsList = listOf<LocalAppInfo>()
+
+    fun checkForUpdates() {
+    }
+
+    class Factory @Inject constructor(
+        private val appsRepository: AppsRepository,
+        private val checkForUpdatesUseCase: CheckForUpdatesUseCase
+    ) :
         ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return UpdatesListViewModel(updaterRepository) as T
+            return UpdatesListViewModel(appsRepository, checkForUpdatesUseCase) as T
         }
     }
 }

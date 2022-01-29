@@ -2,7 +2,7 @@ package by.slowar.appsupdater.ui.updates_list.states
 
 data class AppItemUiState(
     val appName: String,
-    val appPackage: String,
+    val packageName: String,
     val updateDescription: String,
     val updateSize: String,
     val isDescriptionVisible: Boolean,

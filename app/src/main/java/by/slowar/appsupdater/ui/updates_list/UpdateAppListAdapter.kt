@@ -46,7 +46,7 @@ class UpdateAppListAdapter :
     class AppsDiffUtil : DiffUtil.ItemCallback<AppItemUiState>() {
 
         override fun areItemsTheSame(oldItem: AppItemUiState, newItem: AppItemUiState): Boolean {
-            return oldItem.appPackage == newItem.appPackage
+            return oldItem.packageName == newItem.packageName
         }
 
         override fun areContentsTheSame(oldItem: AppItemUiState, newItem: AppItemUiState): Boolean {

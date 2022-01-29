@@ -1,5 +1,6 @@
-package by.slowar.appsupdater.domain
+package by.slowar.appsupdater.domain.api
 
+import by.slowar.appsupdater.data.models.LocalAppInfo
 import by.slowar.appsupdater.data.models.UpdateAppData
 import io.reactivex.Single
 
