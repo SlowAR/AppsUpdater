@@ -8,6 +8,7 @@ import by.slowar.appsupdater.data.models.LocalAppInfo
 import by.slowar.appsupdater.domain.api.AppsRepository
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
 import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
+import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 class UpdatesListViewModel(
@@ -21,6 +22,19 @@ class UpdatesListViewModel(
     private var installedAppsList = listOf<LocalAppInfo>()
 
     fun checkForUpdates() {
+        loadInstalledAppsList()
+    }
+
+    private fun loadInstalledAppsList() {
+        val subscribe = appsRepository.loadInstalledApps()
+            .subscribeOn(Schedulers.single())
+            .subscribe(
+                {
+                    installedAppsList = it
+                },
+                {
+                }
+            )
     }
 
     class Factory @Inject constructor(

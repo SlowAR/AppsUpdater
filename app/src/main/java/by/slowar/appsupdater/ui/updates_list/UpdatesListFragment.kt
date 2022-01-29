@@ -46,6 +46,8 @@ class UpdatesListFragment : Fragment() {
         viewModel.appsUiItems.observe(viewLifecycleOwner) { appsItemsList ->
             adapter.submitList(appsItemsList)
         }
+
+        viewModel.checkForUpdates()
     }
 
     override fun onDestroyView() {
