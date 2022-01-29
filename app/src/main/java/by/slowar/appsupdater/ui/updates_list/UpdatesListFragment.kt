@@ -42,6 +42,7 @@ class UpdatesListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         adapter = UpdateAppListAdapter()
+        binding.appsRecyclerView.adapter = adapter
 
         viewModel.appsUiItems.observe(viewLifecycleOwner) { appsItemsList ->
             adapter.submitList(appsItemsList)

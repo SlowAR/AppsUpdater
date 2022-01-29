@@ -2,6 +2,7 @@ package by.slowar.appsupdater.data.repositories.local
 
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.util.Log
 import by.slowar.appsupdater.data.models.LocalAppInfo
 import io.reactivex.Single
 import javax.inject.Inject
@@ -26,7 +27,7 @@ class InstalledAppsLocalDataSource @Inject constructor(private val packageManage
                     )
                     list.add(localAppInfo)
                 } catch (e: Throwable) {
-                    emitter.onError(e)
+                    Log.e("qweqwe", "loadInstalledApps: ${e.localizedMessage}")
                 }
             }
 

@@ -1,5 +1,6 @@
 package by.slowar.appsupdater.di.modules
 
+import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase

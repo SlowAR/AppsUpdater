@@ -1,5 +1,6 @@
 package by.slowar.appsupdater.data.repositories
 
+import android.util.Log
 import by.slowar.appsupdater.data.models.UpdateAppData
 import by.slowar.appsupdater.data.repositories.remote.UpdaterServiceDataSource
 import by.slowar.appsupdater.di.scopes.ScreenScope
@@ -16,6 +17,6 @@ class UpdaterRepositoryImpl @Inject constructor(private val remoteSource: Update
     }
 
     override fun updateApp(packageName: String) {
-        TODO("Not yet implemented")
+        Log.e("qweqwe", "working updateAppClick $packageName")
     }
 }
