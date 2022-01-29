@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AppsUpdater</string>
+    <string name="update_all">Update all</string>
+    <string name="update">Update</string>
+    <string name="show_update_info">Show update info</string>
+    <string name="app_icon">App icon</string>
 </resources>

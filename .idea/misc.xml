@@ -4,6 +4,8 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Work/LearnProjects/AppsUpdater/app/src/main/res/layout/activity_main.xml" value="0.34739583333333335" />
+        <entry key="..\:/Work/LearnProjects/AppsUpdater/app/src/main/res/layout/app_update_item.xml" value="0.34739583333333335" />
+        <entry key="..\:/Work/LearnProjects/AppsUpdater/app/src/main/res/layout/fragment_updates_list.xml" value="0.3333333333333333" />
       </map>
     </option>
   </component>
