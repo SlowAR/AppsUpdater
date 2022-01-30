@@ -10,6 +10,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppsUpdater">
+        <service
+            android:name=".service.UpdaterService"
+            android:enabled="true"
+            android:exported="false"></service>
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">

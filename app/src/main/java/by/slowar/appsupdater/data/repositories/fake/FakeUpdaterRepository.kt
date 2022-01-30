@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.data.repositories
+package by.slowar.appsupdater.data.repositories.fake
 
 import android.util.Log
 import by.slowar.appsupdater.common.Constants

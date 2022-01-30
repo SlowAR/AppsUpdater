@@ -1,7 +1,7 @@
 package by.slowar.appsupdater.data.repositories
 
 import by.slowar.appsupdater.data.models.LocalAppInfo
-import by.slowar.appsupdater.data.repositories.local.InstalledAppsLocalDataSource
+import by.slowar.appsupdater.data.repositories.data_sources.local.InstalledAppsLocalDataSource
 import by.slowar.appsupdater.domain.api.AppsRepository
 import io.reactivex.Single
 import javax.inject.Inject

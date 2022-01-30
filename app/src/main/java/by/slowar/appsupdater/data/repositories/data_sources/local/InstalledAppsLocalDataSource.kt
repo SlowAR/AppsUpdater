@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.data.repositories.local
+package by.slowar.appsupdater.data.repositories.data_sources.local
 
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager

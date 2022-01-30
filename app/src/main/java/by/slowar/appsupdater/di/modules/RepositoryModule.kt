@@ -1,7 +1,7 @@
 package by.slowar.appsupdater.di.modules
 
 import by.slowar.appsupdater.data.repositories.AppsRepositoryImpl
-import by.slowar.appsupdater.data.repositories.FakeUpdaterRepository
+import by.slowar.appsupdater.data.repositories.fake.FakeUpdaterRepository
 import by.slowar.appsupdater.data.repositories.UpdaterRepositoryImpl
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity

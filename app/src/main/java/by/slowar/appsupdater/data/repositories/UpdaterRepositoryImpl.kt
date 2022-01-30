@@ -3,7 +3,7 @@ package by.slowar.appsupdater.data.repositories
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.repositories.remote.UpdaterServiceDataSource
+import by.slowar.appsupdater.data.repositories.data_sources.local.UpdaterServiceDataSource
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.Single
