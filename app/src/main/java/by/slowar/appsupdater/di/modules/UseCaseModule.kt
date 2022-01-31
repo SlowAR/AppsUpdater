@@ -1,6 +1,5 @@
 package by.slowar.appsupdater.di.modules
 
-import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
@@ -11,7 +10,7 @@ import dagger.Provides
 class UseCaseModule {
 
     @Provides
-    fun provideCheckForUpdatesUseCase(@FakeEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCase {
+    fun provideCheckForUpdatesUseCase(@WorkingEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCase {
         return CheckForUpdatesUseCase(updaterRepository)
     }
 }

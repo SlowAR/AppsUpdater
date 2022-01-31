@@ -1,12 +1,12 @@
 package by.slowar.appsupdater.di.components
 
-import by.slowar.appsupdater.di.modules.RepositoryModule
+import by.slowar.appsupdater.di.modules.ClientRepositoryModule
 import by.slowar.appsupdater.di.modules.UseCaseModule
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.ui.updates_list.UpdatesListFragment
 import dagger.Subcomponent
 
-@Subcomponent(modules = [RepositoryModule::class, UseCaseModule::class])
+@Subcomponent(modules = [ClientRepositoryModule::class, UseCaseModule::class])
 @ScreenScope
 interface UpdatesListComponent {
 

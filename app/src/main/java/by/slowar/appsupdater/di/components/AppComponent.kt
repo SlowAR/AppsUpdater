@@ -1,6 +1,6 @@
 package by.slowar.appsupdater.di.components
 
-import android.content.pm.PackageManager
+import android.app.Application
 import by.slowar.appsupdater.di.scopes.AppScope
 import dagger.BindsInstance
 import dagger.Component
@@ -15,7 +15,7 @@ interface AppComponent {
     interface Builder {
 
         @BindsInstance
-        fun packageManager(packageManager: PackageManager): Builder
+        fun appContext(appContext: Application): Builder
 
         fun build(): AppComponent
     }

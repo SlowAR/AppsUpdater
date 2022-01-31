@@ -6,18 +6,27 @@ import by.slowar.appsupdater.data.models.UpdateAppData
 import by.slowar.appsupdater.data.repositories.data_sources.local.UpdaterServiceDataSource
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.domain.api.UpdaterRepository
+import io.reactivex.Observable
 import io.reactivex.Single
 import javax.inject.Inject
 
 @ScreenScope
-class UpdaterRepositoryImpl @Inject constructor(private val remoteSource: UpdaterServiceDataSource) :
+class UpdaterClientRepository @Inject constructor(private val remoteSource: UpdaterServiceDataSource) :
     UpdaterRepository {
 
+    override fun init(): Observable<Boolean> {
+        return remoteSource.init()
+    }
+
     override fun checkForUpdate(packageName: String): Single<UpdateAppData> {
-        TODO("Not yet implemented")
+        return remoteSource.checkAppForUpdate(packageName)
+    }
+
+    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
+        return remoteSource.checkAllAppsForUpdates(packages)
     }
 
     override fun updateApp(packageName: String) {
-        Log.e(Constants.LOG_TAG, "working updateAppClick $packageName")
+        Log.e(Constants.LOG_TAG, "working entity: updateAppClick $packageName")
     }
 }

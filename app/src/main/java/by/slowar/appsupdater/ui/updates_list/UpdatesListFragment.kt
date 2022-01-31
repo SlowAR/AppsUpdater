@@ -53,15 +53,15 @@ class UpdatesListFragment : Fragment() {
             adapter.submitList(appsItemsList)
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) {
-            binding.swipeRefreshLayout.isRefreshing = it
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.swipeRefreshLayout.isRefreshing = isLoading
         }
 
-        viewModel.errorStringId.observe(viewLifecycleOwner) {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        viewModel.errorStringId.observe(viewLifecycleOwner) { messageId ->
+            Toast.makeText(context, messageId, Toast.LENGTH_LONG).show()
         }
 
-        viewModel.checkForUpdates()
+        viewModel.prepare()
     }
 
     override fun onDestroyView() {
