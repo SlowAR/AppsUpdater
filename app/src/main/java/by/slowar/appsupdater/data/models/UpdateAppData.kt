@@ -6,19 +6,19 @@ import android.os.Parcelable
 data class UpdateAppData(
     val appPackage: String,
     val description: String,
-    val updateSize: String
+    val updateSize: Long
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         parcel.readString().toString(),
         parcel.readString().toString(),
-        parcel.readString().toString()
+        parcel.readLong()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(appPackage)
         parcel.writeString(description)
-        parcel.writeString(updateSize)
+        parcel.writeLong(updateSize)
     }
 
     override fun describeContents(): Int {

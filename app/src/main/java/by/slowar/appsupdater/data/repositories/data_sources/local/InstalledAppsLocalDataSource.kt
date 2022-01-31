@@ -27,7 +27,7 @@ class InstalledAppsLocalDataSource @Inject constructor(private val appContext: A
 
                 try {
                     val localAppInfo = LocalAppInfo(
-                        appName = info.name,
+                        appName = info.loadLabel(packageManager).toString(),
                         packageName = info.packageName,
                         icon = packageManager.getApplicationIcon(info.packageName)
                     )

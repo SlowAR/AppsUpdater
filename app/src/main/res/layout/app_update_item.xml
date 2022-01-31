@@ -52,7 +52,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="@{appItemState.updateSize}"
+            android:text="@{appItemState.getFormattedUpdateSize(context)}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
             app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
             app:layout_constraintStart_toStartOf="@+id/appNameText"

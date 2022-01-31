@@ -17,11 +17,11 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
 
     init {
         appsForUpdateList.apply {
-            add(UpdateAppData("com.package.app1", "Some update description", "10 Mb"))
-            add(UpdateAppData("com.package.app2", "Some update description", "20 Mb"))
-            add(UpdateAppData("com.package.app3", "Some update description", "30 Mb"))
-            add(UpdateAppData("com.package.app4", "Some update description", "40 Mb"))
-            add(UpdateAppData("com.package.app5", "Some update description", "50 Mb"))
+            add(UpdateAppData("com.package.app1", "Some update description", 10 * 1024 * 1024))
+            add(UpdateAppData("com.package.app2", "Some update description", 20 * 1024 * 1024))
+            add(UpdateAppData("com.package.app3", "Some update description", 30 * 1024 * 1024))
+            add(UpdateAppData("com.package.app4", "Some update description", 40 * 1024 * 1024))
+            add(UpdateAppData("com.package.app5", "Some update description", 50 * 1024 * 1024))
         }
     }
 

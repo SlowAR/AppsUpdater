@@ -6,4 +6,6 @@
     <string name="app_icon">App icon</string>
     <string name="unknown_error">Unknown error!</string>
     <string name="apps_updates">Apps updates</string>
+    <string name="kilobytes_word">Kb</string>
+    <string name="megabytes_word">Mb</string>
 </resources>

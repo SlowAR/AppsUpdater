@@ -112,9 +112,8 @@ class UpdatesListViewModel(
                                 updateDescription = updateItem.description,
                                 updateSize = updateItem.updateSize,
                                 icon = data.icon,
-                                isDescriptionVisible = false,
-                                onUpdateAction = { updaterRepository.updateApp(updateItem.appPackage) }
-                            )
+                                isDescriptionVisible = false
+                            ) { updaterRepository.updateApp(updateItem.appPackage) }
                         }
                     }
 
