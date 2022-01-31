@@ -24,7 +24,7 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                UpdaterService.CHECK_ALL_FOR_UPDATES -> qwe()
+                UpdaterService.CHECK_ALL_FOR_UPDATES -> handleAppsForUpdatesResult(msg.data)
                 else -> super.handleMessage(msg)
             }
         }
@@ -98,8 +98,12 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         return checkForUpdatesSource
     }
 
-    private fun qwe() {
-
+    private fun handleAppsForUpdatesResult(data: Bundle) {
+        Log.e(Constants.LOG_TAG, "Received apps for update from service")
+        data.getParcelableArrayList<UpdateAppData>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
+            Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
+            checkForUpdatesSource.onNext(it)
+        }
     }
 
     private fun sendMessage(requestId: Int, data: Bundle? = null, needToReply: Boolean = false) {

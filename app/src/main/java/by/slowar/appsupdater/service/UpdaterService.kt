@@ -30,17 +30,30 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
 
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
+            if (activeRequesters.containsKey(msg.what)) {
+                Log.e(Constants.LOG_TAG, "Request already running")
+                super.handleMessage(msg)
+                return
+            }
+
+            activeRequesters[msg.what] = msg.replyTo
+
             when (msg.what) {
                 CHECK_FOR_UPDATE -> checkForUpdate()
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 INSTALL_UPDATE -> installUpdate()
                 STOP_CURRENT_TASK -> stopCurrentTask()
-                else -> super.handleMessage(msg)
+                else -> {
+                    activeRequesters.remove(msg.what)
+                    super.handleMessage(msg)
+                }
             }
         }
     }
 
     private val serviceMessenger = Messenger(serviceHandler)
+
+    private val activeRequesters = mutableMapOf<Int, Messenger>()
 
     @Inject
     lateinit var serviceManager: UpdaterServiceManager
@@ -75,8 +88,15 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     private fun stopCurrentTask() {
     }
 
-    override fun sendMessage() {
-        TODO("Not yet implemented")
+    override fun sendMessage(requestId: Int, data: Bundle?) {
+        val message = Message.obtain(null, requestId)
+        if (data != null) {
+            message.data = data
+        }
+
+        Log.e(Constants.LOG_TAG, "Sending message to client: $message")
+
+        activeRequesters.remove(requestId)?.send(message)
     }
 
     private fun initNotificationChannel() {
