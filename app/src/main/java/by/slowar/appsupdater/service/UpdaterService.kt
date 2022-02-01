@@ -21,9 +21,13 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
 
         const val CHECK_FOR_UPDATE = 1000
         const val CHECK_ALL_FOR_UPDATES = 1001
-        const val INSTALL_UPDATE = 1002
+        const val UPDATE_APP = 1002
+
+        const val UPDATE_APP_STATUS = 2000
 
         const val CHECK_ALL_FOR_UPDATES_DATA = "CheckAllForUpdatesData"
+        const val UPDATE_APP_DATA = "UpdateAppData"
+        const val UPDATE_APP_STATUS_DATA = "UpdateAppStatusData"
     }
 
     private lateinit var notificationManager: NotificationManager
@@ -41,7 +45,7 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
             when (msg.what) {
                 CHECK_FOR_UPDATE -> checkForUpdate()
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
-                INSTALL_UPDATE -> installUpdate()
+                UPDATE_APP -> installUpdate(msg.data)
                 else -> {
                     activeRequesters.remove(msg.what)
                     super.handleMessage(msg)
@@ -82,13 +86,25 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
         }
     }
 
-    private fun installUpdate() {
+    private fun installUpdate(data: Bundle) {
+        data.getString(UPDATE_APP_DATA)?.let { packageName ->
+            serviceManager.updateApp(packageName)
+        }
     }
 
     override fun showAppsForUpdateInfo(appsForUpdateAmount: Int) {
         val notificationBuilder =
             getCheckAllForUpdatesNotificationBuilder(this, appsForUpdateAmount)
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
+    }
+
+    override fun showUpdateProgressInfo(downloaded: Long, total: Long, speed: Long) {
+    }
+
+    override fun showInstallingUpdateAppInfo() {
+    }
+
+    override fun showCompletedUpdateAppInfo() {
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {

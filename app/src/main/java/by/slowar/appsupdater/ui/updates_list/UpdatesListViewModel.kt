@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.LocalAppInfo
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.domain.api.AppsRepository
 import by.slowar.appsupdater.domain.api.UpdaterRepository
@@ -32,6 +33,9 @@ class UpdatesListViewModel(
 
     private val _errorStringId = MutableLiveData<Int>()
     val errorStringId: LiveData<Int> = _errorStringId
+
+    private val _updateAppState = MutableLiveData<UpdateAppState>()
+    val updateAppState: LiveData<UpdateAppState> = _updateAppState
 
     private var installedAppsList = emptyList<LocalAppInfo>()
 
@@ -135,6 +139,25 @@ class UpdatesListViewModel(
                     Log.e(Constants.LOG_TAG, "Installed apps has been loaded! ${it.size}")
                     installedAppsList = it
                     getAppsForUpdate()
+                },
+                { error ->
+                    finishLoading(error)
+                }
+            )
+    }
+
+    fun updateApp(packageName: String) {
+        //TODO fix disposables
+        if (currentRequestDisposable != null) {
+            return
+        }
+
+        currentRequestDisposable = updaterRepository.updateApp(packageName)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { state ->
+                    _updateAppState.value = state
                 },
                 { error ->
                     finishLoading(error)

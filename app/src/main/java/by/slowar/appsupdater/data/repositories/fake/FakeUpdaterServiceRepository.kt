@@ -1,9 +1,11 @@
 package by.slowar.appsupdater.data.repositories.fake
 
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.Observable
 import io.reactivex.Single
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -23,6 +25,8 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
 
     private val noDescriptionText = "The developer did not provide information"
 
+    private var cachedAppsForUpdate = emptyList<UpdateAppData>()
+
     override fun init(): Observable<Boolean> {
         return Observable.create {
             it.onNext(true)
@@ -35,8 +39,8 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
     }
 
     override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
-        val updateDataList = mutableListOf<UpdateAppData>()
         return Observable.create { emitter ->
+            val updateDataList = mutableListOf<UpdateAppData>()
             for (packageName in packages) {
                 if (emitter.isDisposed) {
                     break
@@ -45,17 +49,57 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                 val hasUpdate = Random.nextFloat() <= HAS_UPDATE_CHANCE
                 if (hasUpdate) {
                     val description = descriptions.random().ifEmpty { noDescriptionText }
-                    val updateSize = Random.nextLong(100 * 1024, 100 * 1024 * 1024)     //100Kb - 100Mb
+                    val updateSize =
+                        Random.nextLong(100 * 1024, 100 * 1024 * 1024)     //100Kb - 100Mb
                     updateDataList.add(UpdateAppData(packageName, description, updateSize))
                 }
             }
 
+            cachedAppsForUpdate = updateDataList
             emitter.onNext(updateDataList)
             emitter.onComplete()
         }
     }
 
-    override fun updateApp(packageName: String) {
-        TODO("Not yet implemented")
+    override fun updateApp(packageName: String): Observable<UpdateAppState> {
+        val app = cachedAppsForUpdate.find { it.appPackage == packageName }
+        return if (app == null) {
+            Observable.create { emitter ->
+                emitter.onNext(UpdateAppState.ErrorState("App doesn't have update"))
+                emitter.onComplete()
+            }
+        } else {
+            Observable.create { emitter ->
+                emitter.onNext(UpdateAppState.InitializeState())
+                TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
+
+                var downloadedBytes = 0L
+                while (downloadedBytes < app.updateSize) {
+                    TimeUnit.SECONDS.sleep(1)
+
+                    val downloadSpeedBytes =
+                        Random.nextLong(500 * 1024, 2 * 1024 * 1024)   //500 Kb/s - 2 Mb/s
+                    downloadedBytes += downloadSpeedBytes.also {
+                        it.coerceIn(0..app.updateSize)
+                    }
+
+                    emitter.onNext(
+                        UpdateAppState.DownloadingState(
+                            app.appPackage,
+                            downloadedBytes,
+                            app.updateSize,
+                            downloadSpeedBytes
+                        )
+                    )
+                }
+
+                emitter.onNext(UpdateAppState.InstallingState())
+                val installSpeed = 10 * 1024    //10 Kb per 1 Ms
+                TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
+
+                emitter.onNext(UpdateAppState.CompletedState())
+                emitter.onComplete()
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ import android.os.*
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.service.UpdaterService
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -20,11 +21,13 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
     private var bindServiceSource: BehaviorSubject<Boolean> = BehaviorSubject.create()
     private val checkForUpdatesSource: BehaviorSubject<List<UpdateAppData>> =
         BehaviorSubject.create()
+    private val updateAppStatusSource: BehaviorSubject<UpdateAppState> = BehaviorSubject.create()
 
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 UpdaterService.CHECK_ALL_FOR_UPDATES -> handleAppsForUpdatesResult(msg.data)
+                UpdaterService.UPDATE_APP_STATUS -> handleUpdateAppStatus(msg.data)
                 else -> super.handleMessage(msg)
             }
         }
@@ -98,11 +101,25 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         return checkForUpdatesSource
     }
 
+    fun updateApp(packageName: String): Observable<UpdateAppState> {
+        val data = Bundle().apply {
+            putString(UpdaterService.UPDATE_APP_DATA, packageName)
+        }
+        sendMessage(UpdaterService.UPDATE_APP, data, true)
+        return updateAppStatusSource
+    }
+
     private fun handleAppsForUpdatesResult(data: Bundle) {
         Log.e(Constants.LOG_TAG, "Received apps for update from service")
         data.getParcelableArrayList<UpdateAppData>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
             Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
             checkForUpdatesSource.onNext(it)
+        }
+    }
+
+    private fun handleUpdateAppStatus(data: Bundle) {
+        data.getParcelable<UpdateAppState>(UpdaterService.UPDATE_APP_STATUS_DATA)?.let { state ->
+            updateAppStatusSource.onNext(state)
         }
     }
 
@@ -118,9 +135,5 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         Log.e(Constants.LOG_TAG, "Sending message to updater service: $message")
 
         serviceMessenger?.send(message)
-    }
-
-    fun updateApp(packageName: String) {
-        TODO("not implemented")
     }
 }

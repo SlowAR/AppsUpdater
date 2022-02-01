@@ -1,37 +1,8 @@
 package by.slowar.appsupdater.data.models
 
-import android.os.Parcel
 import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-data class UpdateAppData(
-    val appPackage: String,
-    val description: String,
-    val updateSize: Long
-) : Parcelable {
-
-    constructor(parcel: Parcel) : this(
-        parcel.readString().toString(),
-        parcel.readString().toString(),
-        parcel.readLong()
-    )
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(appPackage)
-        parcel.writeString(description)
-        parcel.writeLong(updateSize)
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<UpdateAppData> {
-        override fun createFromParcel(parcel: Parcel): UpdateAppData {
-            return UpdateAppData(parcel)
-        }
-
-        override fun newArray(size: Int): Array<UpdateAppData?> {
-            return arrayOfNulls(size)
-        }
-    }
-}
+@Parcelize
+data class UpdateAppData(val appPackage: String, val description: String, val updateSize: Long) :
+    Parcelable

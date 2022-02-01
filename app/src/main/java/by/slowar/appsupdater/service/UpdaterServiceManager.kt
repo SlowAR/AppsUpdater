@@ -5,6 +5,7 @@ import android.os.Parcelable
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -16,7 +17,8 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
 
     var hostListener: Listener? = null
 
-    private var currentTaskDisposable: Disposable? = null
+    private var checkForUpdatesDisposable: Disposable? = null
+    private var updateAppDisposable: Disposable? = null
 
     private var appsForUpdateList: List<UpdateAppData> = emptyList()
 
@@ -25,8 +27,13 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
     }
 
     fun checkAllForUpdates(packages: List<String>) {
-        currentTaskDisposable = repository.checkForUpdates(packages)
-            .subscribeOn(Schedulers.single())
+        //TODO fix disposables
+        if (checkForUpdatesDisposable != null) {
+            return
+        }
+
+        checkForUpdatesDisposable = repository.checkForUpdates(packages)
+            .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { appsForUpdate ->
@@ -34,6 +41,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
                 },
                 { error ->
                     Log.e(Constants.LOG_TAG, "checkAllForUpdates: ${error.localizedMessage}")
+                    checkForUpdatesDisposable = null
                 }
             )
     }
@@ -43,6 +51,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         if (appsForUpdate.isNotEmpty()) {
             hostListener?.showAppsForUpdateInfo(appsForUpdate.size)
         }
+
         val data = Bundle().apply {
             putParcelableArrayList(
                 UpdaterService.CHECK_ALL_FOR_UPDATES_DATA,
@@ -50,16 +59,63 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             )
         }
         hostListener?.sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data)
+
+        checkForUpdatesDisposable = null
+    }
+
+    fun updateApp(packageName: String) {
+        if (updateAppDisposable != null) {
+            return
+        }
+
+        updateAppDisposable = repository.updateApp(packageName)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { updateState ->
+                    handleUpdateAppStatus(updateState)
+                },
+                { error ->
+                    Log.e(Constants.LOG_TAG, "updateApp: ${error.localizedMessage}")
+                    updateAppDisposable = null
+                }
+            )
+    }
+
+    private fun handleUpdateAppStatus(updateState: UpdateAppState) {
+        when (updateState) {
+            is UpdateAppState.DownloadingState -> hostListener?.showUpdateProgressInfo(
+                updateState.downloadedBytes,
+                updateState.totalBytes,
+                updateState.downloadSpeedBytes
+            )
+            is UpdateAppState.InstallingState -> hostListener?.showInstallingUpdateAppInfo()
+            is UpdateAppState.CompletedState -> hostListener?.showCompletedUpdateAppInfo()
+            else -> Log.e(Constants.LOG_TAG, updateState.toString())
+        }
+
+        val statusData = Bundle().apply {
+            putParcelable(UpdaterService.UPDATE_APP_STATUS_DATA, updateState)
+        }
+        hostListener?.sendMessage(UpdaterService.UPDATE_APP_STATUS, statusData)
+        updateAppDisposable = null
     }
 
     fun onClear() {
-        currentTaskDisposable?.dispose()
+        checkForUpdatesDisposable?.dispose()
+        updateAppDisposable?.dispose()
         hostListener = null
     }
 
     interface Listener {
 
         fun showAppsForUpdateInfo(appsForUpdateAmount: Int)
+
+        fun showUpdateProgressInfo(downloaded: Long, total: Long, speed: Long)
+
+        fun showInstallingUpdateAppInfo()
+
+        fun showCompletedUpdateAppInfo()
 
         fun sendMessage(requestId: Int, data: Bundle?)
     }

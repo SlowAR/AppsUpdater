@@ -1,12 +1,12 @@
 package by.slowar.appsupdater.data.repositories.fake
 
-import android.util.Log
-import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.Observable
 import io.reactivex.Single
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -43,7 +43,39 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
         return single.toObservable()
     }
 
-    override fun updateApp(packageName: String) {
-        Log.e(Constants.LOG_TAG, "fake updateAppClick $packageName")
+    override fun updateApp(packageName: String): Observable<UpdateAppState> {
+        val appSize: Long = 7 * 1024 * 1024   //7MB
+
+        return Observable.create { emitter ->
+            emitter.onNext(UpdateAppState.InitializeState())
+            TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
+
+            var downloadedBytes = 0L
+            while (downloadedBytes < appSize) {
+                TimeUnit.SECONDS.sleep(1)
+
+                val downloadSpeedBytes =
+                    Random.nextLong(500 * 1024, 2 * 1024 * 1024)   //500 Kb/s - 2 Mb/s
+                downloadedBytes += downloadSpeedBytes.also {
+                    it.coerceIn(0..appSize)
+                }
+
+                emitter.onNext(
+                    UpdateAppState.DownloadingState(
+                        packageName,
+                        downloadedBytes,
+                        appSize,
+                        downloadSpeedBytes
+                    )
+                )
+            }
+
+            emitter.onNext(UpdateAppState.InstallingState())
+            val installSpeed = 10 * 1024    //10 Kb per 1 Ms
+            TimeUnit.MILLISECONDS.sleep(appSize / installSpeed)
+
+            emitter.onNext(UpdateAppState.CompletedState())
+            emitter.onComplete()
+        }
     }
 }

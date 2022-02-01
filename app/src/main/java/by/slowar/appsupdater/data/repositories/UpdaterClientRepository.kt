@@ -1,8 +1,7 @@
 package by.slowar.appsupdater.data.repositories
 
-import android.util.Log
-import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.data.repositories.data_sources.local.UpdaterServiceDataSource
 import by.slowar.appsupdater.di.scopes.ScreenScope
 import by.slowar.appsupdater.domain.api.UpdaterRepository
@@ -26,7 +25,7 @@ class UpdaterClientRepository @Inject constructor(private val remoteSource: Upda
         return remoteSource.checkAllAppsForUpdates(packages)
     }
 
-    override fun updateApp(packageName: String) {
-        Log.e(Constants.LOG_TAG, "working entity: updateAppClick $packageName")
+    override fun updateApp(packageName: String): Observable<UpdateAppState> {
+        return remoteSource.updateApp(packageName)
     }
 }

@@ -1,6 +1,7 @@
 package by.slowar.appsupdater.domain.api
 
 import by.slowar.appsupdater.data.models.UpdateAppData
+import by.slowar.appsupdater.data.models.UpdateAppState
 import io.reactivex.Observable
 import io.reactivex.Single
 
@@ -12,5 +13,5 @@ interface UpdaterRepository {
 
     fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>>
 
-    fun updateApp(packageName: String)
+    fun updateApp(packageName: String): Observable<UpdateAppState>
 }
