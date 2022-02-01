@@ -9,6 +9,7 @@ import android.os.*
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.di.components.DaggerUpdaterServiceComponent
+import by.slowar.appsupdater.service.utils.getCheckAllForUpdatesNotificationBuilder
 import javax.inject.Inject
 
 class UpdaterService : Service(), UpdaterServiceManager.Listener {
@@ -21,7 +22,6 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
         const val CHECK_FOR_UPDATE = 1000
         const val CHECK_ALL_FOR_UPDATES = 1001
         const val INSTALL_UPDATE = 1002
-        const val STOP_CURRENT_TASK = 1003
 
         const val CHECK_ALL_FOR_UPDATES_DATA = "CheckAllForUpdatesData"
     }
@@ -42,7 +42,6 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
                 CHECK_FOR_UPDATE -> checkForUpdate()
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 INSTALL_UPDATE -> installUpdate()
-                STOP_CURRENT_TASK -> stopCurrentTask()
                 else -> {
                     activeRequesters.remove(msg.what)
                     super.handleMessage(msg)
@@ -73,6 +72,7 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     }
 
     private fun checkForUpdate() {
+        TODO("not implemented")
     }
 
     private fun checkAllForUpdates(data: Bundle) {
@@ -85,7 +85,10 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     private fun installUpdate() {
     }
 
-    private fun stopCurrentTask() {
+    override fun showAppsForUpdateInfo(appsForUpdateAmount: Int) {
+        val notificationBuilder =
+            getCheckAllForUpdatesNotificationBuilder(this, appsForUpdateAmount)
+        notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {

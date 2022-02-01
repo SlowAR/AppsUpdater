@@ -8,4 +8,6 @@
     <string name="apps_updates">Apps updates</string>
     <string name="kilobytes_word">Kb</string>
     <string name="megabytes_word">Mb</string>
+    <string name="updates_available_title">Updates available!</string>
+    <string name="updates_available_text">Found apps to update</string>
 </resources>

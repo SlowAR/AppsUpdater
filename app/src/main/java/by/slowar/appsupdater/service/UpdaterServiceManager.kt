@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
+import by.slowar.appsupdater.data.models.UpdateAppData
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -17,6 +18,8 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
 
     private var currentTaskDisposable: Disposable? = null
 
+    private var appsForUpdateList: List<UpdateAppData> = emptyList()
+
     fun prepare(listener: Listener) {
         hostListener = listener
     }
@@ -27,18 +30,26 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { appsForUpdate ->
-                    val data = Bundle().apply {
-                        putParcelableArrayList(
-                            UpdaterService.CHECK_ALL_FOR_UPDATES_DATA,
-                            appsForUpdate as ArrayList<out Parcelable>
-                        )
-                    }
-                    hostListener?.sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data)
+                    handleCheckAllForUpdateResponse(appsForUpdate)
                 },
                 { error ->
                     Log.e(Constants.LOG_TAG, "checkAllForUpdates: ${error.localizedMessage}")
                 }
             )
+    }
+
+    private fun handleCheckAllForUpdateResponse(appsForUpdate: List<UpdateAppData>) {
+        appsForUpdateList = appsForUpdate
+        if (appsForUpdate.isNotEmpty()) {
+            hostListener?.showAppsForUpdateInfo(appsForUpdate.size)
+        }
+        val data = Bundle().apply {
+            putParcelableArrayList(
+                UpdaterService.CHECK_ALL_FOR_UPDATES_DATA,
+                appsForUpdate as ArrayList<out Parcelable>
+            )
+        }
+        hostListener?.sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data)
     }
 
     fun onClear() {
@@ -47,6 +58,9 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
     }
 
     interface Listener {
+
+        fun showAppsForUpdateInfo(appsForUpdateAmount: Int)
+
         fun sendMessage(requestId: Int, data: Bundle?)
     }
 }
