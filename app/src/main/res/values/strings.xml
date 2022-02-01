@@ -10,4 +10,9 @@
     <string name="megabytes_word">Mb</string>
     <string name="updates_available_title">Updates available!</string>
     <string name="updates_available_text">Found apps to update</string>
+    <string name="installing_text">Installing…</string>
+    <string name="installing_app_text">Installing app</string>
+    <string name="update_completed">Update completed!</string>
+    <string name="successfully_updated">successfully updated!</string>
+    <string name="per_serond_word">/s</string>
 </resources>

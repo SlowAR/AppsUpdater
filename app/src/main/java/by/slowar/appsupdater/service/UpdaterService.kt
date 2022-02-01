@@ -7,9 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.*
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.di.components.DaggerUpdaterServiceComponent
-import by.slowar.appsupdater.service.utils.getCheckAllForUpdatesNotificationBuilder
+import by.slowar.appsupdater.service.utils.*
 import javax.inject.Inject
 
 class UpdaterService : Service(), UpdaterServiceManager.Listener {
@@ -31,6 +32,7 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     }
 
     private lateinit var notificationManager: NotificationManager
+    private lateinit var updateAppNotificationBuilder: NotificationCompat.Builder
 
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -68,6 +70,7 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
         serviceManager.prepare(this)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         initNotificationChannel()
+        updateAppNotificationBuilder = getUpdateAppProgressNotificationBuilder(this)
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -87,6 +90,7 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     }
 
     private fun installUpdate(data: Bundle) {
+        updateAppNotificationBuilder = getUpdateAppProgressNotificationBuilder(this)
         data.getString(UPDATE_APP_DATA)?.let { packageName ->
             serviceManager.updateApp(packageName)
         }
@@ -98,13 +102,32 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
-    override fun showUpdateProgressInfo(downloaded: Long, total: Long, speed: Long) {
+    override fun showUpdateProgressInfo(
+        packageName: String,
+        downloaded: Long,
+        total: Long,
+        speed: Long
+    ) {
+        refreshUpdateAppNotificationProgress(
+            this,
+            updateAppNotificationBuilder,
+            packageName,
+            downloaded,
+            total,
+            speed
+        )
+
+        notificationManager.notify(NOTIFICATION_ID, updateAppNotificationBuilder.build())
     }
 
-    override fun showInstallingUpdateAppInfo() {
+    override fun showInstallingUpdateAppInfo(appName: String) {
+        val notificationBuilder = getUpdateAppInstallingNotificationBuilder(this, appName)
+        notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
-    override fun showCompletedUpdateAppInfo() {
+    override fun showCompletedUpdateAppInfo(appName: String) {
+        val notificationBuilder = getUpdateAppCompletedNotificationBuilder(this, appName)
+        notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {

@@ -70,11 +70,11 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
                 )
             }
 
-            emitter.onNext(UpdateAppState.InstallingState())
+            emitter.onNext(UpdateAppState.InstallingState(packageName))
             val installSpeed = 10 * 1024    //10 Kb per 1 Ms
             TimeUnit.MILLISECONDS.sleep(appSize / installSpeed)
 
-            emitter.onNext(UpdateAppState.CompletedState())
+            emitter.onNext(UpdateAppState.CompletedState(packageName))
             emitter.onComplete()
         }
     }

@@ -50,7 +50,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                 if (hasUpdate) {
                     val description = descriptions.random().ifEmpty { noDescriptionText }
                     val updateSize =
-                        Random.nextLong(100 * 1024, 100 * 1024 * 1024)     //100Kb - 100Mb
+                        Random.nextLong(100 * 1024, 30 * 1024 * 1024)     //100Kb - 30Mb
                     updateDataList.add(UpdateAppData(packageName, description, updateSize))
                 }
             }
@@ -78,7 +78,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     TimeUnit.SECONDS.sleep(1)
 
                     val downloadSpeedBytes =
-                        Random.nextLong(500 * 1024, 2 * 1024 * 1024)   //500 Kb/s - 2 Mb/s
+                        Random.nextLong(500 * 1024, 3 * 1024 * 1024)   //500 Kb/s - 3 Mb/s
                     downloadedBytes += downloadSpeedBytes.also {
                         it.coerceIn(0..app.updateSize)
                     }
@@ -93,11 +93,11 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     )
                 }
 
-                emitter.onNext(UpdateAppState.InstallingState())
-                val installSpeed = 10 * 1024    //10 Kb per 1 Ms
+                emitter.onNext(UpdateAppState.InstallingState(app.appPackage))
+                val installSpeed = 10 * 1024    //20 Kb per 1 Ms
                 TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
 
-                emitter.onNext(UpdateAppState.CompletedState())
+                emitter.onNext(UpdateAppState.CompletedState(app.appPackage))
                 emitter.onComplete()
             }
         }

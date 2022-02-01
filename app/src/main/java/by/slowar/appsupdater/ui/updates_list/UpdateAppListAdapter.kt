@@ -30,7 +30,7 @@ class UpdateAppListAdapter :
         fun bind(appItemState: AppItemUiState) {
             binding.appItemState = appItemState
             binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
-            binding.updateButton.setOnClickListener { appItemState.onUpdateAction }
+            binding.updateButton.setOnClickListener { appItemState.onUpdateAction() }
             binding.executePendingBindings()
         }
 

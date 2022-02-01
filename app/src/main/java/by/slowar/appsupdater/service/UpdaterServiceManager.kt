@@ -85,12 +85,17 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
     private fun handleUpdateAppStatus(updateState: UpdateAppState) {
         when (updateState) {
             is UpdateAppState.DownloadingState -> hostListener?.showUpdateProgressInfo(
+                updateState.packageName,
                 updateState.downloadedBytes,
                 updateState.totalBytes,
                 updateState.downloadSpeedBytes
             )
-            is UpdateAppState.InstallingState -> hostListener?.showInstallingUpdateAppInfo()
-            is UpdateAppState.CompletedState -> hostListener?.showCompletedUpdateAppInfo()
+            is UpdateAppState.InstallingState -> hostListener?.showInstallingUpdateAppInfo(
+                updateState.packageName
+            )
+            is UpdateAppState.CompletedState -> hostListener?.showCompletedUpdateAppInfo(
+                updateState.packageName
+            )
             else -> Log.e(Constants.LOG_TAG, updateState.toString())
         }
 
@@ -111,11 +116,11 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
 
         fun showAppsForUpdateInfo(appsForUpdateAmount: Int)
 
-        fun showUpdateProgressInfo(downloaded: Long, total: Long, speed: Long)
+        fun showUpdateProgressInfo(packageName: String, downloaded: Long, total: Long, speed: Long)
 
-        fun showInstallingUpdateAppInfo()
+        fun showInstallingUpdateAppInfo(appName: String)
 
-        fun showCompletedUpdateAppInfo()
+        fun showCompletedUpdateAppInfo(appName: String)
 
         fun sendMessage(requestId: Int, data: Bundle?)
     }

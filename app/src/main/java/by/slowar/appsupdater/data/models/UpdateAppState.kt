@@ -17,10 +17,10 @@ sealed class UpdateAppState : Parcelable {
     ) : UpdateAppState()
 
     @Parcelize
-    data class InstallingState(val data: String? = null) : UpdateAppState()
+    data class InstallingState(val packageName: String, val data: String? = null) : UpdateAppState()
 
     @Parcelize
-    data class CompletedState(val data: String? = null) : UpdateAppState()
+    data class CompletedState(val packageName: String, val data: String? = null) : UpdateAppState()
 
     @Parcelize
     data class ErrorState(val errorMessage: String) : UpdateAppState()

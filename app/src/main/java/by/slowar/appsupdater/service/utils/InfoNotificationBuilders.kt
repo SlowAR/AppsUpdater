@@ -1,13 +1,10 @@
 package by.slowar.appsupdater.service.utils
 
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.service.UpdaterService
-import by.slowar.appsupdater.ui.MainActivity
+import by.slowar.appsupdater.utils.formatBytesValue
 
 fun getCheckAllForUpdatesNotificationBuilder(
     context: Context,
@@ -22,11 +19,54 @@ fun getCheckAllForUpdatesNotificationBuilder(
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 }
 
-private fun getMainScreenPendingIntent(context: Context): PendingIntent {
-    val mainScreenIntent = Intent(context, MainActivity::class.java)
-    var flags = PendingIntent.FLAG_UPDATE_CURRENT
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        flags = flags or PendingIntent.FLAG_IMMUTABLE
+fun getUpdateAppProgressNotificationBuilder(context: Context): NotificationCompat.Builder {
+    return NotificationCompat.Builder(context, UpdaterService.NOTIFICATION_CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_baseline_get_app_24)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setOngoing(true)
+}
+
+fun refreshUpdateAppNotificationProgress(
+    context: Context,
+    notificationBuilder: NotificationCompat.Builder,
+    packageName: String,
+    downloaded: Long,
+    total: Long,
+    speed: Long
+) {
+    val downloadSpeed =
+        "${formatBytesValue(speed, context)}${context.getString(R.string.per_serond_word)}"
+    val progress = (downloaded.toDouble() / total * 100).toInt()
+    notificationBuilder.apply {
+        setContentTitle(packageName)
+        setContentText(downloadSpeed)
+        setProgress(100, progress, false)
     }
-    return PendingIntent.getActivity(context, 0, mainScreenIntent, flags)
+}
+
+fun getUpdateAppInstallingNotificationBuilder(
+    context: Context,
+    appName: String
+): NotificationCompat.Builder {
+    val title = context.getString(R.string.installing_text)
+    val text = "${context.getString(R.string.installing_app_text)} $appName"
+    return NotificationCompat.Builder(context, UpdaterService.NOTIFICATION_CHANNEL_ID)
+        .setContentTitle(title)
+        .setContentText(text)
+        .setSmallIcon(R.drawable.ic_baseline_file_copy_24)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setOngoing(true)
+}
+
+fun getUpdateAppCompletedNotificationBuilder(
+    context: Context,
+    appName: String
+): NotificationCompat.Builder {
+    val title = context.getString(R.string.update_completed)
+    val text = "$appName ${context.getString(R.string.successfully_updated)}"
+    return NotificationCompat.Builder(context, UpdaterService.NOTIFICATION_CHANNEL_ID)
+        .setContentTitle(title)
+        .setContentText(text)
+        .setSmallIcon(R.drawable.ic_baseline_check_24)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
 }
