@@ -3,25 +3,29 @@ package by.slowar.appsupdater.data.models
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-sealed class UpdateAppState : Parcelable {
+sealed class UpdateAppState(open val packageName: String) : Parcelable {
 
     @Parcelize
-    data class InitializeState(val data: String? = null) : UpdateAppState()
+    data class InitializeState(override val packageName: String, val data: String? = null) :
+        UpdateAppState(packageName)
 
     @Parcelize
     data class DownloadingState(
-        val packageName: String,
+        override val packageName: String,
         val downloadedBytes: Long,
         val totalBytes: Long,
         val downloadSpeedBytes: Long
-    ) : UpdateAppState()
+    ) : UpdateAppState(packageName)
 
     @Parcelize
-    data class InstallingState(val packageName: String, val data: String? = null) : UpdateAppState()
+    data class InstallingState(override val packageName: String, val data: String? = null) :
+        UpdateAppState(packageName)
 
     @Parcelize
-    data class CompletedState(val packageName: String, val data: String? = null) : UpdateAppState()
+    data class CompletedState(override val packageName: String, val data: String? = null) :
+        UpdateAppState(packageName)
 
     @Parcelize
-    data class ErrorState(val errorMessage: String) : UpdateAppState()
+    data class ErrorState(override val packageName: String, val errorMessage: String) :
+        UpdateAppState(packageName)
 }

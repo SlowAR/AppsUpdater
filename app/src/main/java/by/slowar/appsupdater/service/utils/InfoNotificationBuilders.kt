@@ -35,7 +35,7 @@ fun refreshUpdateAppNotificationProgress(
     speed: Long
 ) {
     val downloadSpeed =
-        "${formatBytesValue(speed, context)}${context.getString(R.string.per_serond_word)}"
+        "${formatBytesValue(speed, context)}${context.getString(R.string.per_second_word)}"
     val progress = (downloaded.toDouble() / total * 100).toInt()
     notificationBuilder.apply {
         setContentTitle(packageName)

@@ -61,6 +61,15 @@ class UpdatesListFragment : Fragment() {
             Toast.makeText(context, messageId, Toast.LENGTH_LONG).show()
         }
 
+        viewModel.updatingAppState.observe(viewLifecycleOwner) { itemState ->
+            if (itemState.isCompleted) {
+                adapter.notifyItemRemoved(itemState.itemId)
+            } else {
+                adapter.currentList[itemState.itemId] = itemState.state
+                adapter.notifyItemChanged(itemState.itemId)
+            }
+        }
+
         viewModel.prepare()
     }
 

@@ -131,14 +131,34 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {
+        val message = obtainMessage(requestId, data)
+        Log.e(Constants.LOG_TAG, "Sending message to client: $message")
+        activeRequesters.remove(requestId)?.send(message)
+    }
+
+    override fun sendStatusMessage(
+        requestId: Int,
+        statusId: Int,
+        data: Bundle?,
+        isLastMessage: Boolean
+    ) {
+        val message = obtainMessage(statusId, data)
+
+        Log.e(Constants.LOG_TAG, "Sending status message to client: $message")
+
+        if (isLastMessage) {
+            activeRequesters.remove(requestId)?.send(message)
+        } else {
+            activeRequesters[requestId]?.send(message)
+        }
+    }
+
+    private fun obtainMessage(requestId: Int, data: Bundle?): Message {
         val message = Message.obtain(null, requestId)
         if (data != null) {
             message.data = data
         }
-
-        Log.e(Constants.LOG_TAG, "Sending message to client: $message")
-
-        activeRequesters.remove(requestId)?.send(message)
+        return message
     }
 
     private fun initNotificationChannel() {

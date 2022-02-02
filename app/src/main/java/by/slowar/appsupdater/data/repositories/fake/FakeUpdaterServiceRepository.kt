@@ -65,12 +65,12 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
         val app = cachedAppsForUpdate.find { it.appPackage == packageName }
         return if (app == null) {
             Observable.create { emitter ->
-                emitter.onNext(UpdateAppState.ErrorState("App doesn't have update"))
+                emitter.onNext(UpdateAppState.ErrorState(packageName, "App doesn't have update"))
                 emitter.onComplete()
             }
         } else {
             Observable.create { emitter ->
-                emitter.onNext(UpdateAppState.InitializeState())
+                emitter.onNext(UpdateAppState.InitializeState(packageName))
                 TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
                 var downloadedBytes = 0L

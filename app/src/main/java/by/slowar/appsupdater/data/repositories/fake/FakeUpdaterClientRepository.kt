@@ -47,7 +47,7 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
         val appSize: Long = 7 * 1024 * 1024   //7MB
 
         return Observable.create { emitter ->
-            emitter.onNext(UpdateAppState.InitializeState())
+            emitter.onNext(UpdateAppState.InitializeState(packageName))
             TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
             var downloadedBytes = 0L

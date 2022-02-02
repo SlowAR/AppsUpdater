@@ -7,6 +7,8 @@
 
         <import type="android.view.View" />
 
+        <import type="by.slowar.appsupdater.utils.StringUtils" />
+
         <variable
             name="appItemState"
             type="by.slowar.appsupdater.ui.updates_list.states.AppItemUiState" />
@@ -52,7 +54,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="@{appItemState.getFormattedUpdateSize(context)}"
+            android:text="@{StringUtils.formatAppStatusText(context, appItemState)}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
             app:layout_constraintEnd_toStartOf="@+id/showInfoButton"
             app:layout_constraintStart_toStartOf="@+id/appNameText"

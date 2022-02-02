@@ -42,6 +42,9 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
                 { error ->
                     Log.e(Constants.LOG_TAG, "checkAllForUpdates: ${error.localizedMessage}")
                     checkForUpdatesDisposable = null
+                },
+                {
+                    checkForUpdatesDisposable = null
                 }
             )
     }
@@ -59,8 +62,6 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             )
         }
         hostListener?.sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data)
-
-        checkForUpdatesDisposable = null
     }
 
     fun updateApp(packageName: String) {
@@ -77,6 +78,9 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
                 },
                 { error ->
                     Log.e(Constants.LOG_TAG, "updateApp: ${error.localizedMessage}")
+                    updateAppDisposable = null
+                },
+                {
                     updateAppDisposable = null
                 }
             )
@@ -102,8 +106,15 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         val statusData = Bundle().apply {
             putParcelable(UpdaterService.UPDATE_APP_STATUS_DATA, updateState)
         }
-        hostListener?.sendMessage(UpdaterService.UPDATE_APP_STATUS, statusData)
-        updateAppDisposable = null
+
+        val isLastMessage =
+            updateState is UpdateAppState.CompletedState || updateState is UpdateAppState.ErrorState
+        hostListener?.sendStatusMessage(
+            UpdaterService.UPDATE_APP,
+            UpdaterService.UPDATE_APP_STATUS,
+            statusData,
+            isLastMessage
+        )
     }
 
     fun onClear() {
@@ -123,5 +134,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         fun showCompletedUpdateAppInfo(appName: String)
 
         fun sendMessage(requestId: Int, data: Bundle?)
+
+        fun sendStatusMessage(requestId: Int, statusId: Int, data: Bundle?, isLastMessage: Boolean)
     }
 }

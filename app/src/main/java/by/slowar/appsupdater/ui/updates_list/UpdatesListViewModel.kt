@@ -14,6 +14,7 @@ import by.slowar.appsupdater.domain.api.AppsRepository
 import by.slowar.appsupdater.domain.api.UpdaterRepository
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
 import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates_list.states.UpdateAppItemState
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -28,19 +29,21 @@ class UpdatesListViewModel(
     private val _appsUiItems = MutableLiveData<List<AppItemUiState>>()
     val appsUiItems: LiveData<List<AppItemUiState>> = _appsUiItems
 
+    private val _updatingAppState = MutableLiveData<UpdateAppItemState>()
+    val updatingAppState: LiveData<UpdateAppItemState> = _updatingAppState
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
     private val _errorStringId = MutableLiveData<Int>()
     val errorStringId: LiveData<Int> = _errorStringId
 
-    private val _updateAppState = MutableLiveData<UpdateAppState>()
-    val updateAppState: LiveData<UpdateAppState> = _updateAppState
-
     private var installedAppsList = emptyList<LocalAppInfo>()
 
     private var currentRequestDisposable: Disposable? = null
     private var isRepositoryAvailable = false
+
+    private var currentlyUpdatingAppId: Int = -1
 
     fun prepare() {
         Log.e(Constants.LOG_TAG, "Repository init process...")
@@ -146,7 +149,7 @@ class UpdatesListViewModel(
             )
     }
 
-    fun updateApp(packageName: String) {
+    private fun updateApp(packageName: String) {
         //TODO fix disposables
         if (currentRequestDisposable != null) {
             return
@@ -157,12 +160,73 @@ class UpdatesListViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { state ->
-                    _updateAppState.value = state
+                    handleUpdateAppState(state)
                 },
                 { error ->
                     finishLoading(error)
                 }
             )
+    }
+
+    private fun handleUpdateAppState(appUpdateState: UpdateAppState) {
+        if (currentlyUpdatingAppId == -1) {
+            currentlyUpdatingAppId = getAppIdByPackage(appUpdateState.packageName)
+            if (currentlyUpdatingAppId == -1) {
+                return
+            }
+        }
+
+        val oldAppUiState = _appsUiItems.value?.get(currentlyUpdatingAppId)
+        val newAppUiState: AppItemUiState?
+        var isUpdateCompleted = false
+
+        when (appUpdateState) {
+            is UpdateAppState.InitializeState -> {
+                newAppUiState = oldAppUiState?.copy(
+                    statusStringId = R.string.initializing_text,
+                    isUpdating = true
+                )
+            }
+            is UpdateAppState.DownloadingState -> {
+                newAppUiState = oldAppUiState?.copy(
+                    statusStringId = Constants.EMPTY,
+                    downloadedSize = appUpdateState.downloadedBytes
+                )
+            }
+            is UpdateAppState.InstallingState -> {
+                newAppUiState = oldAppUiState?.copy(statusStringId = R.string.installing_text)
+            }
+            is UpdateAppState.CompletedState -> {
+                newAppUiState =
+                    oldAppUiState?.copy(statusStringId = Constants.EMPTY, isUpdating = false)
+                isUpdateCompleted = true
+            }
+            is UpdateAppState.ErrorState -> {
+                newAppUiState =
+                    oldAppUiState?.copy(statusStringId = Constants.EMPTY, isUpdating = false)
+                Log.e(
+                    Constants.LOG_TAG,
+                    "UpdateAppState.ErrorState ${appUpdateState.errorMessage}"
+                )
+            }
+        }
+
+        if (newAppUiState == null) {
+            Log.e(
+                Constants.LOG_TAG,
+                "newAppUiState is null, appId: $currentlyUpdatingAppId, items: ${_appsUiItems.value?.size}"
+            )
+            return
+        }
+
+        _updatingAppState.value =
+            UpdateAppItemState(currentlyUpdatingAppId, newAppUiState, isUpdateCompleted)
+    }
+
+    private fun getAppIdByPackage(packageName: String): Int {
+        return _appsUiItems.value?.find { it.packageName == packageName }?.let {
+            _appsUiItems.value?.indexOf(it)
+        } ?: -1
     }
 
     private fun finishLoading(error: Throwable? = null) {
