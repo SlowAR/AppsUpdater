@@ -1,13 +1,25 @@
 package by.slowar.appsupdater.data.models
 
 import android.os.Parcelable
+import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
 import kotlinx.parcelize.Parcelize
 
 sealed class UpdateAppState(open val packageName: String) : Parcelable {
 
     @Parcelize
     data class InitializeState(override val packageName: String, val data: String? = null) :
-        UpdateAppState(packageName)
+        UpdateAppState(packageName) {
+        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.InitializeItemUiState {
+            return AppItemUiState.InitializeItemUiState(
+                oldUiState.appName,
+                oldUiState.packageName,
+                oldUiState.description,
+                oldUiState.updateSize,
+                oldUiState.icon,
+                oldUiState.descriptionVisible
+            )
+        }
+    }
 
     @Parcelize
     data class DownloadingState(
@@ -15,17 +27,66 @@ sealed class UpdateAppState(open val packageName: String) : Parcelable {
         val downloadedBytes: Long,
         val totalBytes: Long,
         val downloadSpeedBytes: Long
-    ) : UpdateAppState(packageName)
+    ) : UpdateAppState(packageName) {
+        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.DownloadingItemUiState {
+            return AppItemUiState.DownloadingItemUiState(
+                oldUiState.appName,
+                oldUiState.packageName,
+                oldUiState.description,
+                oldUiState.updateSize,
+                oldUiState.icon,
+                oldUiState.descriptionVisible,
+                downloadedBytes,
+                downloadSpeedBytes
+            )
+        }
+    }
 
     @Parcelize
     data class InstallingState(override val packageName: String, val data: String? = null) :
-        UpdateAppState(packageName)
+        UpdateAppState(packageName) {
+        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.InstallingItemUiState {
+            return AppItemUiState.InstallingItemUiState(
+                oldUiState.appName,
+                oldUiState.packageName,
+                oldUiState.description,
+                oldUiState.updateSize,
+                oldUiState.icon,
+                oldUiState.descriptionVisible,
+            )
+        }
+    }
 
     @Parcelize
     data class CompletedState(override val packageName: String, val data: String? = null) :
-        UpdateAppState(packageName)
+        UpdateAppState(packageName) {
+        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.CompletedItemUiState {
+            return AppItemUiState.CompletedItemUiState(
+                oldUiState.appName,
+                oldUiState.packageName,
+                oldUiState.description,
+                oldUiState.updateSize,
+                oldUiState.icon,
+                oldUiState.descriptionVisible,
+            )
+        }
+    }
 
     @Parcelize
     data class ErrorState(override val packageName: String, val errorMessage: String) :
-        UpdateAppState(packageName)
+        UpdateAppState(packageName) {
+        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.ErrorItemUiState {
+            return AppItemUiState.ErrorItemUiState(
+                oldUiState.appName,
+                oldUiState.packageName,
+                oldUiState.description,
+                oldUiState.updateSize,
+                oldUiState.icon,
+                oldUiState.descriptionVisible,
+                errorMessage
+            )
+        }
+    }
+
+    abstract fun toUiState(oldUiState: AppItemUiState): AppItemUiState
 }

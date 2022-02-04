@@ -1,16 +1,145 @@
 package by.slowar.appsupdater.ui.updates_list.states
 
 import android.graphics.drawable.Drawable
+import kotlin.math.roundToInt
 
-data class AppItemUiState(
-    val appName: String,
-    val packageName: String,
-    val updateDescription: String,
-    val statusStringId: Int = -1,
-    val downloadedSize: Long = -1,
-    val updateSize: Long,
-    val icon: Drawable?,
-    val isUpdating: Boolean = false,
-    val isDescriptionVisible: Boolean,
-    val onUpdateAction: () -> Unit
-)
+sealed class AppItemUiState(
+    open val appName: String,
+    open val packageName: String,
+    open val description: String,
+    open val updateSize: Long,
+    open val icon: Drawable?,
+    open val descriptionVisible: Boolean,
+    open val taskProgressVisible: Boolean,
+    open val downloadProgressVisible: Boolean,
+    open val updateAvailable: Boolean,
+    open val cancelUpdateAvailable: Boolean
+) {
+
+    data class IdleItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean,
+        val onUpdateAction: () -> Unit
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        false,
+        false,
+        true,
+        false
+    )
+
+    data class InitializeItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        true,
+        false,
+        false,
+        true
+    )
+
+    data class DownloadingItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean,
+        val downloadedSize: Long = -1,
+        val downloadSpeed: Long = -1
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        false,
+        true,
+        false,
+        true
+    ) {
+
+        fun getProgressPercent() = (downloadedSize.toDouble() / updateSize * 100).roundToInt()
+    }
+
+    data class InstallingItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        true,
+        false,
+        false,
+        false
+    )
+
+    data class CompletedItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        false,
+        false,
+        false,
+        false
+    )
+
+    data class ErrorItemUiState(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean,
+        val errorMessage: String
+    ) : AppItemUiState(
+        appName,
+        packageName,
+        description,
+        updateSize,
+        icon,
+        descriptionVisible,
+        false,
+        false,
+        true,
+        false
+    )
+}

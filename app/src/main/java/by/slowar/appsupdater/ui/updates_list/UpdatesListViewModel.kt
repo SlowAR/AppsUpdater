@@ -46,14 +46,14 @@ class UpdatesListViewModel(
     private var currentlyUpdatingAppId: Int = -1
 
     fun prepare() {
-        Log.e(Constants.LOG_TAG, "Repository init process...")
+        _isLoading.value = true
+
         currentRequestDisposable = updaterRepository.init()
             .subscribeOn(Schedulers.single())
             .observeOn(AndroidSchedulers.mainThread())
             .retry(3)
             .subscribe(
                 { initResult ->
-                    Log.e(Constants.LOG_TAG, "Repository init process completed: $initResult")
                     isRepositoryAvailable = initResult
                     if (initResult && installedAppsList.isEmpty()) {
                         loadInstalledAppsList()
@@ -113,13 +113,13 @@ class UpdatesListViewModel(
                             app.packageName == updateItem.appPackage
                         }
                         appData?.let { data ->
-                            AppItemUiState(
+                            AppItemUiState.IdleItemUiState(
                                 appName = data.appName,
                                 packageName = updateItem.appPackage,
-                                updateDescription = updateItem.description,
+                                description = updateItem.description,
                                 updateSize = updateItem.updateSize,
                                 icon = data.icon,
-                                isDescriptionVisible = false
+                                descriptionVisible = false
                             ) { updateApp(updateItem.appPackage) }
                         }
                     }
@@ -176,51 +176,21 @@ class UpdatesListViewModel(
             }
         }
 
-        val oldAppUiState = _appsUiItems.value?.get(currentlyUpdatingAppId)
-        val newAppUiState: AppItemUiState?
-        var isUpdateCompleted = false
-
-        when (appUpdateState) {
-            is UpdateAppState.InitializeState -> {
-                newAppUiState = oldAppUiState?.copy(
-                    statusStringId = R.string.initializing_text,
-                    isUpdating = true
-                )
-            }
-            is UpdateAppState.DownloadingState -> {
-                newAppUiState = oldAppUiState?.copy(
-                    statusStringId = Constants.EMPTY,
-                    downloadedSize = appUpdateState.downloadedBytes
-                )
-            }
-            is UpdateAppState.InstallingState -> {
-                newAppUiState = oldAppUiState?.copy(statusStringId = R.string.installing_text)
-            }
-            is UpdateAppState.CompletedState -> {
-                newAppUiState =
-                    oldAppUiState?.copy(statusStringId = Constants.EMPTY, isUpdating = false)
-                isUpdateCompleted = true
-            }
-            is UpdateAppState.ErrorState -> {
-                newAppUiState =
-                    oldAppUiState?.copy(statusStringId = Constants.EMPTY, isUpdating = false)
-                Log.e(
-                    Constants.LOG_TAG,
-                    "UpdateAppState.ErrorState ${appUpdateState.errorMessage}"
-                )
-            }
+        //TODO remove !! - if old state is null - some error occurred, we need to send message to stop updating this app
+        val oldAppUiState = _appsUiItems.value!![currentlyUpdatingAppId]
+        val newAppUiState = if (appUpdateState !is UpdateAppState.ErrorState) {
+            appUpdateState.toUiState(oldAppUiState)
+        } else {
+            AppItemUiState.IdleItemUiState(
+                oldAppUiState.appName,
+                oldAppUiState.packageName,
+                oldAppUiState.description,
+                oldAppUiState.updateSize,
+                oldAppUiState.icon,
+                oldAppUiState.descriptionVisible
+            ) { updateApp(oldAppUiState.packageName) }
         }
-
-        if (newAppUiState == null) {
-            Log.e(
-                Constants.LOG_TAG,
-                "newAppUiState is null, appId: $currentlyUpdatingAppId, items: ${_appsUiItems.value?.size}"
-            )
-            return
-        }
-
-        _updatingAppState.value =
-            UpdateAppItemState(currentlyUpdatingAppId, newAppUiState, isUpdateCompleted)
+        _updatingAppState.value = UpdateAppItemState(currentlyUpdatingAppId, newAppUiState)
     }
 
     private fun getAppIdByPackage(packageName: String): Int {

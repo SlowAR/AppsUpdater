@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import by.slowar.appsupdater.UpdaterApp
 import by.slowar.appsupdater.databinding.FragmentUpdatesListBinding
+import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
 import javax.inject.Inject
 
 class UpdatesListFragment : Fragment() {
@@ -50,7 +51,7 @@ class UpdatesListFragment : Fragment() {
         }
 
         viewModel.appsUiItems.observe(viewLifecycleOwner) { appsItemsList ->
-            adapter.submitList(appsItemsList)
+            adapter.setNewAppList(appsItemsList)
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
@@ -62,11 +63,15 @@ class UpdatesListFragment : Fragment() {
         }
 
         viewModel.updatingAppState.observe(viewLifecycleOwner) { itemState ->
-            if (itemState.isCompleted) {
-                adapter.notifyItemRemoved(itemState.itemId)
+            if (itemState.state is AppItemUiState.CompletedItemUiState) {
+                adapter.removeAppItem(itemState.itemId)
             } else {
-                adapter.currentList[itemState.itemId] = itemState.state
-                adapter.notifyItemChanged(itemState.itemId)
+                val payload = if (itemState.state is AppItemUiState.IdleItemUiState) {
+                    null
+                } else {
+                    UpdateAppListAdapter.APP_UPDATE_PAYLOAD
+                }
+                adapter.updateAppItem(itemState.itemId, itemState.state, payload)
             }
         }
 

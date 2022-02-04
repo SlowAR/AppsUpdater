@@ -14,6 +14,7 @@
     <string name="installing_text">Installing…</string>
     <string name="installing_app_text">Installing app</string>
     <string name="update_completed">Update completed!</string>
+    <string name="update_error">Update failed…</string>
     <string name="successfully_updated">successfully updated!</string>
     <string name="per_second_word">/s</string>
 </resources>
