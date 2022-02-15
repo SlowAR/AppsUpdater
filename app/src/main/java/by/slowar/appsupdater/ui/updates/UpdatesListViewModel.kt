@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates_list
+package by.slowar.appsupdater.ui.updates
 
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -7,14 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.models.LocalAppInfo
-import by.slowar.appsupdater.data.models.UpdateAppState
+import by.slowar.appsupdater.data.installedapps.AppsRepository
+import by.slowar.appsupdater.data.updates.UpdaterRepository
+import by.slowar.appsupdater.data.updates.remote.UpdateAppState
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
-import by.slowar.appsupdater.domain.api.AppsRepository
-import by.slowar.appsupdater.domain.api.UpdaterRepository
+import by.slowar.appsupdater.domain.InstalledApp
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
-import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
-import by.slowar.appsupdater.ui.updates_list.states.UpdateAppItemState
+import by.slowar.appsupdater.ui.updates.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates.states.UpdateAppItemState
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -38,7 +38,7 @@ class UpdatesListViewModel(
     private val _errorStringId = MutableLiveData<Int>()
     val errorStringId: LiveData<Int> = _errorStringId
 
-    private var installedAppsList = emptyList<LocalAppInfo>()
+    private var installedAppsList = emptyList<InstalledApp>()
 
     private var currentRequestDisposable: Disposable? = null
     private var isRepositoryAvailable = false
@@ -138,9 +138,9 @@ class UpdatesListViewModel(
         currentRequestDisposable = appsRepository.loadInstalledApps()
             .subscribeOn(Schedulers.single())
             .subscribe(
-                {
-                    Log.e(Constants.LOG_TAG, "Installed apps has been loaded! ${it.size}")
-                    installedAppsList = it
+                { result ->
+                    Log.e(Constants.LOG_TAG, "Installed apps has been loaded! ${result.size}")
+                    installedAppsList = result
                     getAppsForUpdate()
                 },
                 { error ->
@@ -178,9 +178,8 @@ class UpdatesListViewModel(
 
         //TODO remove !! - if old state is null - some error occurred, we need to send message to stop updating this app
         val oldAppUiState = _appsUiItems.value!![currentlyUpdatingAppId]
-        val newAppUiState = if (appUpdateState !is UpdateAppState.ErrorState) {
-            appUpdateState.toUiState(oldAppUiState)
-        } else {
+        val newAppUiState = if (appUpdateState is UpdateAppState.ErrorState) {
+            finishLoading(appUpdateState.error)
             AppItemUiState.IdleItemUiState(
                 oldAppUiState.appName,
                 oldAppUiState.packageName,
@@ -189,7 +188,14 @@ class UpdatesListViewModel(
                 oldAppUiState.icon,
                 oldAppUiState.descriptionVisible
             ) { updateApp(oldAppUiState.packageName) }
+        } else {
+            appUpdateState.toUiState(oldAppUiState)
         }
+
+        if (newAppUiState is AppItemUiState.CompletedItemUiState) {
+            finishLoading()
+        }
+
         _updatingAppState.value = UpdateAppItemState(currentlyUpdatingAppId, newAppUiState)
     }
 

@@ -1,8 +1,8 @@
-package by.slowar.appsupdater.data.repositories.fake
+package by.slowar.appsupdater.data.updaterservice
 
-import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.models.UpdateAppState
-import by.slowar.appsupdater.domain.api.UpdaterRepository
+import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
+import by.slowar.appsupdater.data.updates.remote.UpdateAppState
+import by.slowar.appsupdater.data.updates.UpdaterRepository
 import io.reactivex.Observable
 import io.reactivex.Single
 import java.util.concurrent.TimeUnit
@@ -25,7 +25,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
 
     private val noDescriptionText = "The developer did not provide information"
 
-    private var cachedAppsForUpdate = emptyList<UpdateAppData>()
+    private var cachedAppsForUpdate = emptyList<UpdateAppDto>()
 
     override fun init(): Observable<Boolean> {
         return Observable.create {
@@ -34,13 +34,13 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
         }
     }
 
-    override fun checkForUpdate(packageName: String): Single<UpdateAppData> {
+    override fun checkForUpdate(packageName: String): Single<UpdateAppDto> {
         TODO("Not yet implemented")
     }
 
-    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
+    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
         return Observable.create { emitter ->
-            val updateDataList = mutableListOf<UpdateAppData>()
+            val updateDataList = mutableListOf<UpdateAppDto>()
             for (packageName in packages) {
                 if (emitter.isDisposed) {
                     break
@@ -51,7 +51,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     val description = descriptions.random().ifEmpty { noDescriptionText }
                     val updateSize =
                         Random.nextLong(100 * 1024, 30 * 1024 * 1024)     //100Kb - 30Mb
-                    updateDataList.add(UpdateAppData(packageName, description, updateSize))
+                    updateDataList.add(UpdateAppDto(packageName, description, updateSize))
                 }
             }
 
@@ -65,7 +65,12 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
         val app = cachedAppsForUpdate.find { it.appPackage == packageName }
         return if (app == null) {
             Observable.create { emitter ->
-                emitter.onNext(UpdateAppState.ErrorState(packageName, "App doesn't have update"))
+                emitter.onNext(
+                    UpdateAppState.ErrorState(
+                        packageName,
+                        IllegalStateException("App doesn't have update")
+                    )
+                )
                 emitter.onComplete()
             }
         } else {

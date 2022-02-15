@@ -1,7 +1,7 @@
-package by.slowar.appsupdater.data.models
+package by.slowar.appsupdater.data.updates.remote
 
 import android.os.Parcelable
-import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import kotlinx.parcelize.Parcelize
 
 sealed class UpdateAppState(open val packageName: String) : Parcelable {
@@ -73,7 +73,7 @@ sealed class UpdateAppState(open val packageName: String) : Parcelable {
     }
 
     @Parcelize
-    data class ErrorState(override val packageName: String, val errorMessage: String) :
+    data class ErrorState(override val packageName: String, val error: Throwable) :
         UpdateAppState(packageName) {
         override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.ErrorItemUiState {
             return AppItemUiState.ErrorItemUiState(
@@ -83,7 +83,7 @@ sealed class UpdateAppState(open val packageName: String) : Parcelable {
                 oldUiState.updateSize,
                 oldUiState.icon,
                 oldUiState.descriptionVisible,
-                errorMessage
+                error
             )
         }
     }

@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates_list.states.utils
+package by.slowar.appsupdater.ui.updates.states.utils
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter

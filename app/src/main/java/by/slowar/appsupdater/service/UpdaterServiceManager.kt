@@ -4,10 +4,10 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.models.UpdateAppState
+import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
+import by.slowar.appsupdater.data.updates.remote.UpdateAppState
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
-import by.slowar.appsupdater.domain.api.UpdaterRepository
+import by.slowar.appsupdater.data.updates.UpdaterRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -20,7 +20,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
     private var checkForUpdatesDisposable: Disposable? = null
     private var updateAppDisposable: Disposable? = null
 
-    private var appsForUpdateList: List<UpdateAppData> = emptyList()
+    private var appsForUpdateList: List<UpdateAppDto> = emptyList()
 
     fun prepare(listener: Listener) {
         hostListener = listener
@@ -49,7 +49,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             )
     }
 
-    private fun handleCheckAllForUpdateResponse(appsForUpdate: List<UpdateAppData>) {
+    private fun handleCheckAllForUpdateResponse(appsForUpdate: List<UpdateAppDto>) {
         appsForUpdateList = appsForUpdate
         if (appsForUpdate.isNotEmpty()) {
             hostListener?.showAppsForUpdateInfo(appsForUpdate.size)

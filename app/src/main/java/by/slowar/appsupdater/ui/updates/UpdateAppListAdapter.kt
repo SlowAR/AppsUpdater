@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates_list
+package by.slowar.appsupdater.ui.updates
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -10,9 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.AppUpdateItemBinding
-import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
-import by.slowar.appsupdater.ui.updates_list.states.utils.animateHideProgress
-import by.slowar.appsupdater.ui.updates_list.states.utils.animateShowProgress
+import by.slowar.appsupdater.ui.updates.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates.states.utils.animateHideProgress
+import by.slowar.appsupdater.ui.updates.states.utils.animateShowProgress
 import by.slowar.appsupdater.utils.formatBytesValue
 
 class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = ArrayList()) :

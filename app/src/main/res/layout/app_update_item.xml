@@ -9,7 +9,7 @@
         
         <variable
             name="appItemState"
-            type="by.slowar.appsupdater.ui.updates_list.states.AppItemUiState" />
+            type="by.slowar.appsupdater.ui.updates.states.AppItemUiState" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

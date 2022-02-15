@@ -1,10 +1,9 @@
-package by.slowar.appsupdater.data.repositories
+package by.slowar.appsupdater.data.updates
 
-import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.models.UpdateAppState
-import by.slowar.appsupdater.data.repositories.data_sources.local.UpdaterServiceDataSource
+import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
+import by.slowar.appsupdater.data.updates.remote.UpdateAppState
+import by.slowar.appsupdater.data.updates.remote.UpdaterServiceDataSource
 import by.slowar.appsupdater.di.scopes.ScreenScope
-import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.Observable
 import io.reactivex.Single
 import javax.inject.Inject
@@ -17,11 +16,11 @@ class UpdaterClientRepository @Inject constructor(private val remoteSource: Upda
         return remoteSource.init()
     }
 
-    override fun checkForUpdate(packageName: String): Single<UpdateAppData> {
+    override fun checkForUpdate(packageName: String): Single<UpdateAppDto> {
         return remoteSource.checkAppForUpdate(packageName)
     }
 
-    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
+    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
         return remoteSource.checkAllAppsForUpdates(packages)
     }
 

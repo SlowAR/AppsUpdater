@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.data.repositories.data_sources.local
+package by.slowar.appsupdater.data.updates.remote
 
 import android.app.Application
 import android.content.ComponentName
@@ -8,8 +8,6 @@ import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.models.UpdateAppState
 import by.slowar.appsupdater.service.UpdaterService
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -19,7 +17,7 @@ import javax.inject.Inject
 class UpdaterServiceDataSource @Inject constructor(private val appContext: Application) {
 
     private var bindServiceSource: BehaviorSubject<Boolean> = BehaviorSubject.create()
-    private val checkForUpdatesSource: BehaviorSubject<List<UpdateAppData>> =
+    private val checkForUpdatesSource: BehaviorSubject<List<UpdateAppDto>> =
         BehaviorSubject.create()
     private val updateAppStatusSource: BehaviorSubject<UpdateAppState> = BehaviorSubject.create()
 
@@ -84,11 +82,11 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         return bindServiceSource
     }
 
-    fun checkAppForUpdate(packageName: String): Single<UpdateAppData> {
+    fun checkAppForUpdate(packageName: String): Single<UpdateAppDto> {
         TODO("not implemented")
     }
 
-    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
+    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
         val data = Bundle().apply {
             if (packages is ArrayList) {    //TODO refactor
                 putStringArrayList(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA, packages)
@@ -111,7 +109,7 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
 
     private fun handleAppsForUpdatesResult(data: Bundle) {
         Log.e(Constants.LOG_TAG, "Received apps for update from service")
-        data.getParcelableArrayList<UpdateAppData>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
+        data.getParcelableArrayList<UpdateAppDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
             Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
             checkForUpdatesSource.onNext(it)
         }

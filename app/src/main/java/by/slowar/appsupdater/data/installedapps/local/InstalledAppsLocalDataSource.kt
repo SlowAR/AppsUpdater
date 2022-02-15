@@ -1,22 +1,31 @@
-package by.slowar.appsupdater.data.repositories.data_sources.local
+package by.slowar.appsupdater.data.installedapps.local
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.content.pm.PackageManager
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.models.LocalAppInfo
 import io.reactivex.Single
 import javax.inject.Inject
 
-class InstalledAppsLocalDataSource @Inject constructor(private val appContext: Application) {
+interface InstalledAppsLocalDataSource {
+
+    fun loadInstalledApps(): Single<List<InstalledAppDto>>
+}
+
+class InstalledAppsLocalDataSourceImpl @Inject constructor(
+    private val packageManager: PackageManager
+) : InstalledAppsLocalDataSource {
 
     @SuppressLint("QueryPermissionsNeeded")
-    fun loadInstalledApps(): Single<List<LocalAppInfo>> {
-        val packageManager = appContext.packageManager
+    override fun loadInstalledApps(): Single<List<InstalledAppDto>> {
         return Single.create { emitter ->
             val appsInfo = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-            val list = ArrayList<LocalAppInfo>(appsInfo.size)
+            if (appsInfo.isNullOrEmpty()) {
+                emitter.onError(IllegalArgumentException("Apps info is empty!"))
+                return@create
+            }
+
+            val list = ArrayList<InstalledAppDto>(appsInfo.size)
             for (info in appsInfo) {
                 if (info.name == null) {
                     continue
@@ -26,7 +35,7 @@ class InstalledAppsLocalDataSource @Inject constructor(private val appContext: A
                 }
 
                 try {
-                    val localAppInfo = LocalAppInfo(
+                    val localAppInfo = InstalledAppDto(
                         appName = info.loadLabel(packageManager).toString(),
                         packageName = info.packageName,
                         icon = packageManager.getApplicationIcon(info.packageName)

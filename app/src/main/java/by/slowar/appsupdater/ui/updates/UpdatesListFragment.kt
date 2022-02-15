@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates_list
+package by.slowar.appsupdater.ui.updates
 
 import android.content.Context
 import android.os.Bundle
@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import by.slowar.appsupdater.UpdaterApp
 import by.slowar.appsupdater.databinding.FragmentUpdatesListBinding
-import by.slowar.appsupdater.ui.updates_list.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import javax.inject.Inject
 
 class UpdatesListFragment : Fragment() {

@@ -1,9 +1,8 @@
-package by.slowar.appsupdater.data.repositories.fake
+package by.slowar.appsupdater.data.updates
 
-import by.slowar.appsupdater.data.models.UpdateAppData
-import by.slowar.appsupdater.data.models.UpdateAppState
+import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
+import by.slowar.appsupdater.data.updates.remote.UpdateAppState
 import by.slowar.appsupdater.di.scopes.ScreenScope
-import by.slowar.appsupdater.domain.api.UpdaterRepository
 import io.reactivex.Observable
 import io.reactivex.Single
 import java.util.concurrent.TimeUnit
@@ -13,15 +12,15 @@ import kotlin.random.Random
 @ScreenScope
 class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
 
-    private val appsForUpdateList = mutableListOf<UpdateAppData>()
+    private val appsForUpdateList = mutableListOf<UpdateAppDto>()
 
     init {
         appsForUpdateList.apply {
-            add(UpdateAppData("com.package.app1", "Some update description", 10 * 1024 * 1024))
-            add(UpdateAppData("com.package.app2", "Some update description", 20 * 1024 * 1024))
-            add(UpdateAppData("com.package.app3", "Some update description", 30 * 1024 * 1024))
-            add(UpdateAppData("com.package.app4", "Some update description", 40 * 1024 * 1024))
-            add(UpdateAppData("com.package.app5", "Some update description", 50 * 1024 * 1024))
+            add(UpdateAppDto("com.package.app1", "Some update description", 10 * 1024 * 1024))
+            add(UpdateAppDto("com.package.app2", "Some update description", 20 * 1024 * 1024))
+            add(UpdateAppDto("com.package.app3", "Some update description", 30 * 1024 * 1024))
+            add(UpdateAppDto("com.package.app4", "Some update description", 40 * 1024 * 1024))
+            add(UpdateAppDto("com.package.app5", "Some update description", 50 * 1024 * 1024))
         }
     }
 
@@ -30,14 +29,14 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterRepository {
         return single.toObservable()
     }
 
-    override fun checkForUpdate(packageName: String): Single<UpdateAppData> {
+    override fun checkForUpdate(packageName: String): Single<UpdateAppDto> {
         return Single.create {
             it.onSuccess(appsForUpdateList[Random.nextInt(appsForUpdateList.size)])
         }
     }
 
-    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppData>> {
-        val single = Single.create<List<UpdateAppData>> {
+    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
+        val single = Single.create<List<UpdateAppDto>> {
             it.onSuccess(appsForUpdateList)
         }
         return single.toObservable()

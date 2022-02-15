@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates_list.states
+package by.slowar.appsupdater.ui.updates.states
 
 import android.graphics.drawable.Drawable
 import kotlin.math.roundToInt
@@ -129,7 +129,7 @@ sealed class AppItemUiState(
         override val updateSize: Long,
         override val icon: Drawable?,
         override val descriptionVisible: Boolean,
-        val errorMessage: String
+        val error: Throwable
     ) : AppItemUiState(
         appName,
         packageName,

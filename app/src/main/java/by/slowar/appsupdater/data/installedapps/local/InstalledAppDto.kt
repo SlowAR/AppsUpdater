@@ -1,8 +1,8 @@
-package by.slowar.appsupdater.data.models
+package by.slowar.appsupdater.data.installedapps.local
 
 import android.graphics.drawable.Drawable
 
-data class LocalAppInfo(
+data class InstalledAppDto(
     val appName: String,
     val packageName: String,
     val icon: Drawable?
