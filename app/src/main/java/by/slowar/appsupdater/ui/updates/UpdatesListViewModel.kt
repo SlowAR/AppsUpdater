@@ -11,7 +11,7 @@ import by.slowar.appsupdater.data.installedapps.AppsRepository
 import by.slowar.appsupdater.data.updates.UpdaterRepository
 import by.slowar.appsupdater.data.updates.remote.UpdateAppState
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
-import by.slowar.appsupdater.domain.InstalledApp
+import by.slowar.appsupdater.domain.installedapps.InstalledApp
 import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import by.slowar.appsupdater.ui.updates.states.UpdateAppItemState
@@ -41,7 +41,6 @@ class UpdatesListViewModel(
     private var installedAppsList = emptyList<InstalledApp>()
 
     private var currentRequestDisposable: Disposable? = null
-    private var isRepositoryAvailable = false
 
     private var currentlyUpdatingAppId: Int = -1
 
@@ -50,8 +49,8 @@ class UpdatesListViewModel(
 
         currentRequestDisposable = updaterRepository.init()
             .subscribeOn(Schedulers.single())
-            .observeOn(AndroidSchedulers.mainThread())
             .retry(3)
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { initResult ->
                     isRepositoryAvailable = initResult

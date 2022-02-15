@@ -12,11 +12,23 @@ import by.slowar.appsupdater.service.UpdaterService
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.SingleSubject
 import javax.inject.Inject
 
-class UpdaterServiceDataSource @Inject constructor(private val appContext: Application) {
+interface UpdaterServiceDataSource {
 
-    private var bindServiceSource: BehaviorSubject<Boolean> = BehaviorSubject.create()
+    fun init(): Single<Boolean>
+
+    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>>
+
+    fun updateApp(packageName: String): Observable<UpdateAppState>
+}
+
+class UpdaterServiceDataSourceImpl @Inject constructor(
+    private val appContext: Application
+) : UpdaterServiceDataSource {
+
+    private var bindServiceSource: SingleSubject<Boolean> = SingleSubject.create()
     private val checkForUpdatesSource: BehaviorSubject<List<UpdateAppDto>> =
         BehaviorSubject.create()
     private val updateAppStatusSource: BehaviorSubject<UpdateAppState> = BehaviorSubject.create()
@@ -39,14 +51,14 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
             serviceMessenger = Messenger(binder)
             isBound = true
-            bindServiceSource.onNext(true)
+            bindServiceSource.onSuccess(true)
             Log.e(Constants.LOG_TAG, "Bound to updater service!")
         }
 
         override fun onServiceDisconnected(componentName: ComponentName?) {
             serviceMessenger = null
             isBound = false
-            bindServiceSource.onNext(false)
+            bindServiceSource.onError(IllegalStateException("Unbound from updater service!"))
             Log.e(Constants.LOG_TAG, "Unbound from updater service!")
         }
     }
@@ -73,20 +85,19 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         }
         if (isStarted) {
             appContext.stopService(serviceIntent)
-            isStarted = false;
+            isStarted = false
         }
     }
 
-    fun init(): Observable<Boolean> {
+    override fun init(): Single<Boolean> {
+        if (bindServiceSource.hasValue() || bindServiceSource.hasThrowable()) {
+            bindServiceSource = SingleSubject.create()
+        }
         startService()
         return bindServiceSource
     }
 
-    fun checkAppForUpdate(packageName: String): Single<UpdateAppDto> {
-        TODO("not implemented")
-    }
-
-    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
+    override fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
         val data = Bundle().apply {
             if (packages is ArrayList) {    //TODO refactor
                 putStringArrayList(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA, packages)
@@ -99,7 +110,7 @@ class UpdaterServiceDataSource @Inject constructor(private val appContext: Appli
         return checkForUpdatesSource
     }
 
-    fun updateApp(packageName: String): Observable<UpdateAppState> {
+    override fun updateApp(packageName: String): Observable<UpdateAppState> {
         val data = Bundle().apply {
             putString(UpdaterService.UPDATE_APP_DATA, packageName)
         }

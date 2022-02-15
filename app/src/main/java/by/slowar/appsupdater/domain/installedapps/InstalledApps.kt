@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.domain
+package by.slowar.appsupdater.domain.installedapps
 
 import android.graphics.drawable.Drawable
 
