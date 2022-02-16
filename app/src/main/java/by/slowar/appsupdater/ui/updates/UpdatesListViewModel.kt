@@ -7,64 +7,33 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.installedapps.AppsRepository
 import by.slowar.appsupdater.data.updates.UpdaterRepository
-import by.slowar.appsupdater.data.updates.remote.UpdateAppState
+import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
+import by.slowar.appsupdater.data.updates.toUiState
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
-import by.slowar.appsupdater.domain.installedapps.InstalledApp
-import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
+import by.slowar.appsupdater.domain.updates.AppUpdateItem
+import by.slowar.appsupdater.domain.updates.CheckForUpdatesUseCaseImpl
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
-import by.slowar.appsupdater.ui.updates.states.UpdateAppItemState
+import by.slowar.appsupdater.ui.updates.states.AppUpdateItemState
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 class UpdatesListViewModel(
-    private val appsRepository: AppsRepository,
     private val updaterRepository: UpdaterRepository,
-    private val checkForUpdatesUseCase: CheckForUpdatesUseCase
+    private val checkForUpdatesUseCase: CheckForUpdatesUseCaseImpl
 ) : ViewModel() {
 
-    private val _appsUiItems = MutableLiveData<List<AppItemUiState>>()
-    val appsUiItems: LiveData<List<AppItemUiState>> = _appsUiItems
+    private val _updateResult = MutableLiveData<AppUpdateResult>()
+    val updateResult: LiveData<AppUpdateResult> = _updateResult
 
-    private val _updatingAppState = MutableLiveData<UpdateAppItemState>()
-    val updatingAppState: LiveData<UpdateAppItemState> = _updatingAppState
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _errorStringId = MutableLiveData<Int>()
-    val errorStringId: LiveData<Int> = _errorStringId
-
-    private var installedAppsList = emptyList<InstalledApp>()
+    private val _updatingAppState = MutableLiveData<AppUpdateItemState>()
+    val updatingAppState: LiveData<AppUpdateItemState> = _updatingAppState
 
     private var currentRequestDisposable: Disposable? = null
 
     private var currentlyUpdatingAppId: Int = -1
-
-    fun prepare() {
-        _isLoading.value = true
-
-        currentRequestDisposable = updaterRepository.init()
-            .subscribeOn(Schedulers.single())
-            .retry(3)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { initResult ->
-                    isRepositoryAvailable = initResult
-                    if (initResult && installedAppsList.isEmpty()) {
-                        loadInstalledAppsList()
-                    } else {
-                        finishLoading(IllegalStateException("Couldn't init repository"))
-                    }
-                },
-                { error ->
-                    finishLoading(error)
-                }
-            )
-    }
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
         currentRequestDisposable?.let { disposable ->
@@ -76,80 +45,37 @@ class UpdatesListViewModel(
             }
         }
 
-        if (!isRepositoryAvailable) {
-            prepare()
-            return
-        }
-
-        _isLoading.value = true
-        if (forceRefresh) {
-            loadInstalledAppsList()
-        } else {
-            getAppsForUpdate()
-        }
-    }
-
-    private fun getAppsForUpdate() {
-        Log.e(Constants.LOG_TAG, "Checking apps for updates...")
-        currentRequestDisposable = checkForUpdatesUseCase.checkForUpdates(installedAppsList)
-            .subscribeOn(Schedulers.single())
+        _updateResult.value = AppUpdateResult.Loading
+        currentRequestDisposable = checkForUpdatesUseCase.checkForUpdates(forceRefresh)
+            .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { updatesList ->
-                    Log.e(
-                        Constants.LOG_TAG,
-                        "Apps updates checked! Apps for update: ${updatesList.size}"
-                    )
-
-                    val appsMetadata = installedAppsList.filter { appMeta ->
-                        updatesList.any { appUpdate ->
-                            appMeta.packageName == appUpdate.appPackage
-                        }
-                    }
-
-                    val updateApps = updatesList.mapNotNull { updateItem ->
-                        val appData = appsMetadata.find { app ->
-                            app.packageName == updateItem.appPackage
-                        }
-                        appData?.let { data ->
-                            AppItemUiState.IdleItemUiState(
-                                appName = data.appName,
-                                packageName = updateItem.appPackage,
-                                description = updateItem.description,
-                                updateSize = updateItem.updateSize,
-                                icon = data.icon,
-                                descriptionVisible = false
-                            ) { updateApp(updateItem.appPackage) }
-                        }
-                    }
-
-                    _appsUiItems.value = updateApps
-                    finishLoading()
-                },
-                { error ->
-                    finishLoading(error)
-                }
+                { updatesList -> handleCheckForUpdates(updatesList) },
+                { error -> finishLoading(error) }
             )
     }
 
-    private fun loadInstalledAppsList() {
-        Log.e(Constants.LOG_TAG, "Loading installed apps...")
-        currentRequestDisposable = appsRepository.loadInstalledApps()
-            .subscribeOn(Schedulers.single())
-            .subscribe(
-                { result ->
-                    Log.e(Constants.LOG_TAG, "Installed apps has been loaded! ${result.size}")
-                    installedAppsList = result
-                    getAppsForUpdate()
-                },
-                { error ->
-                    finishLoading(error)
+    private fun handleCheckForUpdates(updatesList: List<AppUpdateItem>) {
+        Log.e(
+            Constants.LOG_TAG,
+            "Apps updates checked! Apps for update: ${updatesList.size}"
+        )
+
+        if (updatesList.isEmpty()) {
+            _updateResult.value = AppUpdateResult.EmptyResult
+        } else {
+            val updatesListUi = updatesList.map { item ->
+                item.toUiState {
+                    updaterRepository.updateApp(item.packageName)
                 }
-            )
+            }
+            _updateResult.value = AppUpdateResult.SuccessResult(updatesListUi)
+        }
+
+        finishLoading()
     }
 
     private fun updateApp(packageName: String) {
-        //TODO fix disposables
         if (currentRequestDisposable != null) {
             return
         }
@@ -158,16 +84,12 @@ class UpdatesListViewModel(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { state ->
-                    handleUpdateAppState(state)
-                },
-                { error ->
-                    finishLoading(error)
-                }
+                { state -> handleUpdateAppState(state) },
+                { error -> finishLoading(error) }
             )
     }
 
-    private fun handleUpdateAppState(appUpdateState: UpdateAppState) {
+    private fun handleUpdateAppState(appUpdateState: AppUpdateItemStateDto) {
         if (currentlyUpdatingAppId == -1) {
             currentlyUpdatingAppId = getAppIdByPackage(appUpdateState.packageName)
             if (currentlyUpdatingAppId == -1) {
@@ -177,9 +99,9 @@ class UpdatesListViewModel(
 
         //TODO remove !! - if old state is null - some error occurred, we need to send message to stop updating this app
         val oldAppUiState = _appsUiItems.value!![currentlyUpdatingAppId]
-        val newAppUiState = if (appUpdateState is UpdateAppState.ErrorState) {
+        val newAppUiState = if (appUpdateState is AppUpdateItemStateDto.ErrorResult) {
             finishLoading(appUpdateState.error)
-            AppItemUiState.IdleItemUiState(
+            AppItemUiState.Idle(
                 oldAppUiState.appName,
                 oldAppUiState.packageName,
                 oldAppUiState.description,
@@ -191,11 +113,11 @@ class UpdatesListViewModel(
             appUpdateState.toUiState(oldAppUiState)
         }
 
-        if (newAppUiState is AppItemUiState.CompletedItemUiState) {
+        if (newAppUiState is AppItemUiState.CompletedResult) {
             finishLoading()
         }
 
-        _updatingAppState.value = UpdateAppItemState(currentlyUpdatingAppId, newAppUiState)
+        _updatingAppState.value = AppUpdateItemState(currentlyUpdatingAppId, newAppUiState)
     }
 
     private fun getAppIdByPackage(packageName: String): Int {
@@ -209,14 +131,14 @@ class UpdatesListViewModel(
             handleError(error)
         }
         currentRequestDisposable = null
-        _isLoading.value = false
     }
 
     private fun handleError(error: Throwable) {
-        _errorStringId.value = when (error) {
+        val errorStringId = when (error) {
             else -> R.string.unknown_error
         }
         Log.e(Constants.LOG_TAG, "Error: ${error.localizedMessage}")
+        _updateResult.value = AppUpdateResult.ErrorResult(errorStringId)
     }
 
     override fun onCleared() {
@@ -225,17 +147,12 @@ class UpdatesListViewModel(
     }
 
     class Factory @Inject constructor(
-        private val appsRepository: AppsRepository,
         @WorkingEntity private val updaterRepository: UpdaterRepository,
-        private val checkForUpdatesUseCase: CheckForUpdatesUseCase
+        private val checkForUpdatesUseCase: CheckForUpdatesUseCaseImpl
     ) :
         ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return UpdatesListViewModel(
-                appsRepository,
-                updaterRepository,
-                checkForUpdatesUseCase
-            ) as T
+            return UpdatesListViewModel(updaterRepository, checkForUpdatesUseCase) as T
         }
     }
 }

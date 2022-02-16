@@ -71,7 +71,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
             setStatusText("", appItemState.updateSize)
             binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
 
-            if (appItemState is AppItemUiState.IdleItemUiState) {
+            if (appItemState is AppItemUiState.Idle) {
                 binding.updateButton.setOnClickListener { appItemState.onUpdateAction() }
             }
 
@@ -80,26 +80,26 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
 
         fun bindPayload(appItemState: AppItemUiState) {
             when (appItemState) {
-                is AppItemUiState.IdleItemUiState -> {
+                is AppItemUiState.Idle -> {
                     Log.e(
                         Constants.LOG_TAG,
                         "bindPayload: idle (shouldn't be here - notify without payload tag)"
                     )
                 }
-                is AppItemUiState.InitializeItemUiState -> handleInitializeState(appItemState)
-                is AppItemUiState.DownloadingItemUiState -> handleDownloadingState(appItemState)
-                is AppItemUiState.InstallingItemUiState -> handleInstallingState(appItemState)
-                is AppItemUiState.CompletedItemUiState -> handleCompletedState(appItemState)
-                is AppItemUiState.ErrorItemUiState -> handleErrorState(appItemState)
+                is AppItemUiState.Initializing -> handleInitializeState(appItemState)
+                is AppItemUiState.Downloading -> handleDownloadingState(appItemState)
+                is AppItemUiState.Installing -> handleInstallingState(appItemState)
+                is AppItemUiState.CompletedResult -> handleCompletedState(appItemState)
+                is AppItemUiState.ErrorResult -> handleErrorState(appItemState)
             }
         }
 
-        private fun handleInitializeState(uiState: AppItemUiState.InitializeItemUiState) {
+        private fun handleInitializeState(uiState: AppItemUiState.Initializing) {
             handleDefaultStateData(uiState)
             setStatusText(R.string.initializing_text, uiState.updateSize)
         }
 
-        private fun handleDownloadingState(uiState: AppItemUiState.DownloadingItemUiState) {
+        private fun handleDownloadingState(uiState: AppItemUiState.Downloading) {
             handleDefaultStateData(uiState)
 
             val downloadedSizeText = formatBytesValue(uiState.downloadedSize, binding.root.context)
@@ -112,16 +112,16 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
             }
         }
 
-        private fun handleInstallingState(uiState: AppItemUiState.InstallingItemUiState) {
+        private fun handleInstallingState(uiState: AppItemUiState.Installing) {
             handleDefaultStateData(uiState)
             setStatusText(R.string.installing_text)
         }
 
-        private fun handleCompletedState(uiState: AppItemUiState.CompletedItemUiState) {
+        private fun handleCompletedState(uiState: AppItemUiState.CompletedResult) {
             handleDefaultStateData(uiState)
         }
 
-        private fun handleErrorState(uiState: AppItemUiState.ErrorItemUiState) {
+        private fun handleErrorState(uiState: AppItemUiState.ErrorResult) {
             handleDefaultStateData(uiState)
             setStatusText(R.string.update_error, uiState.updateSize)
         }

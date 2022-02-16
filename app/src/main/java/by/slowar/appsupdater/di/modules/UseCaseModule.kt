@@ -2,7 +2,7 @@ package by.slowar.appsupdater.di.modules
 
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.data.updates.UpdaterRepository
-import by.slowar.appsupdater.domain.use_cases.CheckForUpdatesUseCase
+import by.slowar.appsupdater.domain.updates.CheckForUpdatesUseCaseImpl
 import dagger.Module
 import dagger.Provides
 
@@ -10,7 +10,7 @@ import dagger.Provides
 object UseCaseModule {
 
     @Provides
-    fun provideCheckForUpdatesUseCase(@WorkingEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCase {
-        return CheckForUpdatesUseCase(updaterRepository)
+    fun provideCheckForUpdatesUseCase(@WorkingEntity updaterRepository: UpdaterRepository): CheckForUpdatesUseCaseImpl {
+        return CheckForUpdatesUseCaseImpl(updaterRepository)
     }
 }

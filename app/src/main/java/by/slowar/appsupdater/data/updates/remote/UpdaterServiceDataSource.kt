@@ -19,9 +19,9 @@ interface UpdaterServiceDataSource {
 
     fun init(): Single<Boolean>
 
-    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>>
+    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<AppUpdateDto>>
 
-    fun updateApp(packageName: String): Observable<UpdateAppState>
+    fun updateApp(packageName: String): Observable<AppUpdateItemStateDto>
 }
 
 class UpdaterServiceDataSourceImpl @Inject constructor(
@@ -29,9 +29,9 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
 ) : UpdaterServiceDataSource {
 
     private var bindServiceSource: SingleSubject<Boolean> = SingleSubject.create()
-    private val checkForUpdatesSource: BehaviorSubject<List<UpdateAppDto>> =
+    private val checkForUpdatesSource: BehaviorSubject<List<AppUpdateDto>> =
         BehaviorSubject.create()
-    private val updateAppStatusSource: BehaviorSubject<UpdateAppState> = BehaviorSubject.create()
+    private val updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> = BehaviorSubject.create()
 
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -97,7 +97,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         return bindServiceSource
     }
 
-    override fun checkAllAppsForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
+    override fun checkAllAppsForUpdates(packages: List<String>): Observable<List<AppUpdateDto>> {
         val data = Bundle().apply {
             if (packages is ArrayList) {    //TODO refactor
                 putStringArrayList(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA, packages)
@@ -110,7 +110,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         return checkForUpdatesSource
     }
 
-    override fun updateApp(packageName: String): Observable<UpdateAppState> {
+    override fun updateApp(packageName: String): Observable<AppUpdateItemStateDto> {
         val data = Bundle().apply {
             putString(UpdaterService.UPDATE_APP_DATA, packageName)
         }
@@ -120,14 +120,14 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
 
     private fun handleAppsForUpdatesResult(data: Bundle) {
         Log.e(Constants.LOG_TAG, "Received apps for update from service")
-        data.getParcelableArrayList<UpdateAppDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
+        data.getParcelableArrayList<AppUpdateDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
             Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
             checkForUpdatesSource.onNext(it)
         }
     }
 
     private fun handleUpdateAppStatus(data: Bundle) {
-        data.getParcelable<UpdateAppState>(UpdaterService.UPDATE_APP_STATUS_DATA)?.let { state ->
+        data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)?.let { state ->
             updateAppStatusSource.onNext(state)
         }
     }

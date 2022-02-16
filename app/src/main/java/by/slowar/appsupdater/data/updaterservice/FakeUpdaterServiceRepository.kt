@@ -1,10 +1,9 @@
 package by.slowar.appsupdater.data.updaterservice
 
-import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
-import by.slowar.appsupdater.data.updates.remote.UpdateAppState
 import by.slowar.appsupdater.data.updates.UpdaterRepository
+import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
+import by.slowar.appsupdater.domain.updates.AppUpdate
 import io.reactivex.Observable
-import io.reactivex.Single
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.random.Random
@@ -25,22 +24,11 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
 
     private val noDescriptionText = "The developer did not provide information"
 
-    private var cachedAppsForUpdate = emptyList<UpdateAppDto>()
+    private var cachedAppsForUpdate = emptyList<AppUpdate>()
 
-    override fun init(): Observable<Boolean> {
-        return Observable.create {
-            it.onNext(true)
-            it.onComplete()
-        }
-    }
-
-    override fun checkForUpdate(packageName: String): Single<UpdateAppDto> {
-        TODO("Not yet implemented")
-    }
-
-    override fun checkForUpdates(packages: List<String>): Observable<List<UpdateAppDto>> {
+    override fun checkForUpdates(packages: List<String>): Observable<List<AppUpdate>> {
         return Observable.create { emitter ->
-            val updateDataList = mutableListOf<UpdateAppDto>()
+            val updateDataList = mutableListOf<AppUpdate>()
             for (packageName in packages) {
                 if (emitter.isDisposed) {
                     break
@@ -51,7 +39,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     val description = descriptions.random().ifEmpty { noDescriptionText }
                     val updateSize =
                         Random.nextLong(100 * 1024, 30 * 1024 * 1024)     //100Kb - 30Mb
-                    updateDataList.add(UpdateAppDto(packageName, description, updateSize))
+                    updateDataList.add(AppUpdate(packageName, description, updateSize))
                 }
             }
 
@@ -61,12 +49,12 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
         }
     }
 
-    override fun updateApp(packageName: String): Observable<UpdateAppState> {
+    override fun updateApp(packageName: String): Observable<AppUpdateItemStateDto> {
         val app = cachedAppsForUpdate.find { it.appPackage == packageName }
         return if (app == null) {
             Observable.create { emitter ->
                 emitter.onNext(
-                    UpdateAppState.ErrorState(
+                    AppUpdateItemStateDto.ErrorResult(
                         packageName,
                         IllegalStateException("App doesn't have update")
                     )
@@ -75,7 +63,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
             }
         } else {
             Observable.create { emitter ->
-                emitter.onNext(UpdateAppState.InitializeState(packageName))
+                emitter.onNext(AppUpdateItemStateDto.Initializing(packageName))
                 TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
                 var downloadedBytes = 0L
@@ -89,7 +77,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     }
 
                     emitter.onNext(
-                        UpdateAppState.DownloadingState(
+                        AppUpdateItemStateDto.Downloading(
                             app.appPackage,
                             downloadedBytes,
                             app.updateSize,
@@ -98,11 +86,11 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     )
                 }
 
-                emitter.onNext(UpdateAppState.InstallingState(app.appPackage))
+                emitter.onNext(AppUpdateItemStateDto.Installing(app.appPackage))
                 val installSpeed = 10 * 1024    //20 Kb per 1 Ms
                 TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
 
-                emitter.onNext(UpdateAppState.CompletedState(app.appPackage))
+                emitter.onNext(AppUpdateItemStateDto.CompletedResult(app.appPackage))
                 emitter.onComplete()
             }
         }

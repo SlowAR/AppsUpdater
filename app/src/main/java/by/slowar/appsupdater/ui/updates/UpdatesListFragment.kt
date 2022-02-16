@@ -50,23 +50,15 @@ class UpdatesListFragment : Fragment() {
             viewModel.checkForUpdates(true)
         }
 
-        viewModel.appsUiItems.observe(viewLifecycleOwner) { appsItemsList ->
-            adapter.setNewAppList(appsItemsList)
-        }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.swipeRefreshLayout.isRefreshing = isLoading
-        }
-
-        viewModel.errorStringId.observe(viewLifecycleOwner) { messageId ->
-            Toast.makeText(context, messageId, Toast.LENGTH_LONG).show()
+        viewModel.updateResult.observe(viewLifecycleOwner) { result ->
+            handleUpdateResult(result)
         }
 
         viewModel.updatingAppState.observe(viewLifecycleOwner) { itemState ->
-            if (itemState.state is AppItemUiState.CompletedItemUiState) {
+            if (itemState.state is AppItemUiState.CompletedResult) {
                 adapter.removeAppItem(itemState.itemId)
             } else {
-                val payload = if (itemState.state is AppItemUiState.IdleItemUiState) {
+                val payload = if (itemState.state is AppItemUiState.Idle) {
                     null
                 } else {
                     UpdateAppListAdapter.APP_UPDATE_PAYLOAD
@@ -75,7 +67,30 @@ class UpdatesListFragment : Fragment() {
             }
         }
 
-        viewModel.prepare()
+        viewModel.checkForUpdates()
+    }
+
+    private fun handleUpdateResult(state: AppUpdateResult) {
+        when (state) {
+            is AppUpdateResult.Loading -> {
+                changeLoadingVisibility(true)
+            }
+            AppUpdateResult.EmptyResult -> {
+                changeLoadingVisibility(false)
+            }
+            is AppUpdateResult.ErrorResult -> {
+                changeLoadingVisibility(false)
+                Toast.makeText(context, state.errorId, Toast.LENGTH_LONG).show()
+            }
+            is AppUpdateResult.SuccessResult -> {
+                changeLoadingVisibility(false)
+                adapter.setNewAppList(state.result)
+            }
+        }
+    }
+
+    private fun changeLoadingVisibility(isVisible: Boolean) {
+        binding.swipeRefreshLayout.isRefreshing = isVisible
     }
 
     override fun onDestroyView() {

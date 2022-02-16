@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class UpdateAppDto(
+data class AppUpdateDto(
     val appPackage: String,
     val description: String,
     val updateSize: Long

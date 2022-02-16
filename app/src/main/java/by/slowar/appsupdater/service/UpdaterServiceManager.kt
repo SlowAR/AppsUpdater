@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.updates.remote.UpdateAppDto
-import by.slowar.appsupdater.data.updates.remote.UpdateAppState
+import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
+import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.data.updates.UpdaterRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -20,7 +20,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
     private var checkForUpdatesDisposable: Disposable? = null
     private var updateAppDisposable: Disposable? = null
 
-    private var appsForUpdateList: List<UpdateAppDto> = emptyList()
+    private var appsForUpdateList: List<AppUpdateDto> = emptyList()
 
     fun prepare(listener: Listener) {
         hostListener = listener
@@ -49,7 +49,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             )
     }
 
-    private fun handleCheckAllForUpdateResponse(appsForUpdate: List<UpdateAppDto>) {
+    private fun handleCheckAllForUpdateResponse(appsForUpdate: List<AppUpdateDto>) {
         appsForUpdateList = appsForUpdate
         if (appsForUpdate.isNotEmpty()) {
             hostListener?.showAppsForUpdateInfo(appsForUpdate.size)
@@ -86,18 +86,18 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
             )
     }
 
-    private fun handleUpdateAppStatus(updateState: UpdateAppState) {
+    private fun handleUpdateAppStatus(updateState: AppUpdateItemStateDto) {
         when (updateState) {
-            is UpdateAppState.DownloadingState -> hostListener?.showUpdateProgressInfo(
+            is AppUpdateItemStateDto.Downloading -> hostListener?.showUpdateProgressInfo(
                 updateState.packageName,
                 updateState.downloadedBytes,
                 updateState.totalBytes,
                 updateState.downloadSpeedBytes
             )
-            is UpdateAppState.InstallingState -> hostListener?.showInstallingUpdateAppInfo(
+            is AppUpdateItemStateDto.Installing -> hostListener?.showInstallingUpdateAppInfo(
                 updateState.packageName
             )
-            is UpdateAppState.CompletedState -> hostListener?.showCompletedUpdateAppInfo(
+            is AppUpdateItemStateDto.CompletedResult -> hostListener?.showCompletedUpdateAppInfo(
                 updateState.packageName
             )
             else -> Log.e(Constants.LOG_TAG, updateState.toString())
@@ -108,7 +108,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         }
 
         val isLastMessage =
-            updateState is UpdateAppState.CompletedState || updateState is UpdateAppState.ErrorState
+            updateState is AppUpdateItemStateDto.CompletedResult || updateState is AppUpdateItemStateDto.ErrorResult
         hostListener?.sendStatusMessage(
             UpdaterService.UPDATE_APP,
             UpdaterService.UPDATE_APP_STATUS,

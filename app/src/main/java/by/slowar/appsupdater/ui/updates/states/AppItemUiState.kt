@@ -16,7 +16,7 @@ sealed class AppItemUiState(
     open val cancelUpdateAvailable: Boolean
 ) {
 
-    data class IdleItemUiState(
+    data class Idle(
         override val appName: String,
         override val packageName: String,
         override val description: String,
@@ -37,7 +37,7 @@ sealed class AppItemUiState(
         false
     )
 
-    data class InitializeItemUiState(
+    data class Initializing(
         override val appName: String,
         override val packageName: String,
         override val description: String,
@@ -57,7 +57,7 @@ sealed class AppItemUiState(
         true
     )
 
-    data class DownloadingItemUiState(
+    data class Downloading(
         override val appName: String,
         override val packageName: String,
         override val description: String,
@@ -82,7 +82,7 @@ sealed class AppItemUiState(
         fun getProgressPercent() = (downloadedSize.toDouble() / updateSize * 100).roundToInt()
     }
 
-    data class InstallingItemUiState(
+    data class Installing(
         override val appName: String,
         override val packageName: String,
         override val description: String,
@@ -102,7 +102,7 @@ sealed class AppItemUiState(
         false
     )
 
-    data class CompletedItemUiState(
+    data class CompletedResult(
         override val appName: String,
         override val packageName: String,
         override val description: String,
@@ -122,7 +122,7 @@ sealed class AppItemUiState(
         false
     )
 
-    data class ErrorItemUiState(
+    data class ErrorResult(
         override val appName: String,
         override val packageName: String,
         override val description: String,
