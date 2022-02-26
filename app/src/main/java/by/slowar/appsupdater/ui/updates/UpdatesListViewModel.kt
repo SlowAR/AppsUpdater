@@ -7,51 +7,54 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.updates.UpdaterRepository
+import by.slowar.appsupdater.data.updates.UpdaterClientRepository
+import by.slowar.appsupdater.data.updates.mappers.toPendingUiState
+import by.slowar.appsupdater.data.updates.mappers.toUiState
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
-import by.slowar.appsupdater.data.updates.toUiState
 import by.slowar.appsupdater.di.qualifiers.WorkingEntity
 import by.slowar.appsupdater.domain.updates.AppUpdateItem
 import by.slowar.appsupdater.domain.updates.CheckForUpdatesUseCaseImpl
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
-import by.slowar.appsupdater.ui.updates.states.AppUpdateItemState
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 class UpdatesListViewModel(
-    private val updaterRepository: UpdaterRepository,
+    private val updaterRepository: UpdaterClientRepository,
     private val checkForUpdatesUseCase: CheckForUpdatesUseCaseImpl
 ) : ViewModel() {
 
     private val _updateResult = MutableLiveData<AppUpdateResult>()
     val updateResult: LiveData<AppUpdateResult> = _updateResult
 
-    private val _updatingAppState = MutableLiveData<AppUpdateItemState>()
-    val updatingAppState: LiveData<AppUpdateItemState> = _updatingAppState
+    private val _updatingAppState = MutableLiveData<AppItemUiState>()
+    val updatingAppState: LiveData<AppItemUiState> = _updatingAppState
 
-    private var currentRequestDisposable: Disposable? = null
+    private var updateAppsMetadata: MutableList<AppItemUiState> = mutableListOf()
+    private var updatingAppPreviousState: AppItemUiState = AppItemUiState.Empty
 
-    private var currentlyUpdatingAppId: Int = -1
+    private var checkForUpdatesDisposable: Disposable? = null
+    private val appUpdateDisposables = CompositeDisposable()
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
-        currentRequestDisposable?.let { disposable ->
+        checkForUpdatesDisposable?.let { disposable ->
             if (forceRefresh) {
                 disposable.dispose()
-                currentRequestDisposable = null
+                checkForUpdatesDisposable = null
             } else {
                 return
             }
         }
 
         _updateResult.value = AppUpdateResult.Loading
-        currentRequestDisposable = checkForUpdatesUseCase.checkForUpdates(forceRefresh)
+        checkForUpdatesDisposable = checkForUpdatesUseCase.checkForUpdates(forceRefresh)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { updatesList -> handleCheckForUpdates(updatesList) },
-                { error -> finishLoading(error) }
+                { error -> handleError(error) }
             )
     }
 
@@ -64,73 +67,80 @@ class UpdatesListViewModel(
         if (updatesList.isEmpty()) {
             _updateResult.value = AppUpdateResult.EmptyResult
         } else {
-            val updatesListUi = updatesList.map { item ->
+            updateAppsMetadata = updatesList.map { item ->
                 item.toUiState {
-                    updaterRepository.updateApp(item.packageName)
+                    updateApp(item.packageName)
                 }
-            }
-            _updateResult.value = AppUpdateResult.SuccessResult(updatesListUi)
+            }.toMutableList()
+            _updateResult.value = AppUpdateResult.SuccessResult(updateAppsMetadata)
         }
-
-        finishLoading()
     }
 
     private fun updateApp(packageName: String) {
-        if (currentRequestDisposable != null) {
-            return
-        }
+        setPendingUiState(packageName)
 
-        currentRequestDisposable = updaterRepository.updateApp(packageName)
+        val disposable = updaterRepository.updateApps(arrayListOf(packageName))
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { state -> handleUpdateAppState(state) },
-                { error -> finishLoading(error) }
+                { error -> handleError(error) }
             )
+        appUpdateDisposables.add(disposable)
+    }
+
+    fun updateAllApps() {
+        if (updateAppsMetadata.isNotEmpty()) {
+            _updateResult.value = AppUpdateResult.SuccessResult(
+                updateAppsMetadata.map { it.toPendingUiState() }
+            )
+
+            //...
+        }
+    }
+
+    private fun setPendingUiState(packageName: String) {
+        val idleStateAppId = updateAppsMetadata.indexOfFirst { it.packageName == packageName }
+        _updatingAppState.value = updateAppsMetadata[idleStateAppId].toPendingUiState()
     }
 
     private fun handleUpdateAppState(appUpdateState: AppUpdateItemStateDto) {
-        if (currentlyUpdatingAppId == -1) {
-            currentlyUpdatingAppId = getAppIdByPackage(appUpdateState.packageName)
-            if (currentlyUpdatingAppId == -1) {
+        if (!appUpdateState.isUpdating()) {
+            handleError(IllegalStateException("App need to be in updating state!"))
+            return
+        }
+
+        if (updatingAppPreviousState is AppItemUiState.Empty) {
+            try {
+                updatingAppPreviousState =
+                    updateAppsMetadata.first { appUpdateState.packageName == it.packageName }
+            } catch (e: NoSuchElementException) {
+                handleError(e)
                 return
             }
         }
 
-        //TODO remove !! - if old state is null - some error occurred, we need to send message to stop updating this app
-        val oldAppUiState = _appsUiItems.value!![currentlyUpdatingAppId]
         val newAppUiState = if (appUpdateState is AppUpdateItemStateDto.ErrorResult) {
-            finishLoading(appUpdateState.error)
+            handleError(appUpdateState.error)
             AppItemUiState.Idle(
-                oldAppUiState.appName,
-                oldAppUiState.packageName,
-                oldAppUiState.description,
-                oldAppUiState.updateSize,
-                oldAppUiState.icon,
-                oldAppUiState.descriptionVisible
-            ) { updateApp(oldAppUiState.packageName) }
+                updatingAppPreviousState.appName,
+                updatingAppPreviousState.packageName,
+                updatingAppPreviousState.description,
+                updatingAppPreviousState.updateSize,
+                updatingAppPreviousState.icon,
+                false
+            ) { updateApp(updatingAppPreviousState.packageName) }
         } else {
-            appUpdateState.toUiState(oldAppUiState)
+            appUpdateState.toUiState(updatingAppPreviousState)
         }
 
-        if (newAppUiState is AppItemUiState.CompletedResult) {
-            finishLoading()
+        _updatingAppState.value = newAppUiState
+
+        if (appUpdateState is AppUpdateItemStateDto.ErrorResult ||
+            appUpdateState is AppUpdateItemStateDto.CompletedResult
+        ) {
+            updatingAppPreviousState = AppItemUiState.Empty
         }
-
-        _updatingAppState.value = AppUpdateItemState(currentlyUpdatingAppId, newAppUiState)
-    }
-
-    private fun getAppIdByPackage(packageName: String): Int {
-        return _appsUiItems.value?.find { it.packageName == packageName }?.let {
-            _appsUiItems.value?.indexOf(it)
-        } ?: -1
-    }
-
-    private fun finishLoading(error: Throwable? = null) {
-        if (error != null) {
-            handleError(error)
-        }
-        currentRequestDisposable = null
     }
 
     private fun handleError(error: Throwable) {
@@ -143,11 +153,12 @@ class UpdatesListViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        currentRequestDisposable?.dispose()
+        checkForUpdatesDisposable?.dispose()
+        appUpdateDisposables.clear()
     }
 
     class Factory @Inject constructor(
-        @WorkingEntity private val updaterRepository: UpdaterRepository,
+        @WorkingEntity private val updaterRepository: UpdaterClientRepository,
         private val checkForUpdatesUseCase: CheckForUpdatesUseCaseImpl
     ) :
         ViewModelProvider.NewInstanceFactory() {

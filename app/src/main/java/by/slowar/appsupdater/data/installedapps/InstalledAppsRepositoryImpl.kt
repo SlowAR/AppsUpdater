@@ -9,6 +9,7 @@ class InstalledAppsRepositoryImpl @Inject constructor(
     private val installedAppsLocalDataSource: InstalledAppsLocalDataSource
 ) : InstalledAppsRepository {
 
+    //todo it need to be cached in viewmodel
     var lastInstalledAppsList: List<InstalledApp> = emptyList()
 
     override fun loadInstalledApps(forceRefresh: Boolean): Single<List<InstalledApp>> {

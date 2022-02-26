@@ -22,6 +22,8 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         const val APP_UPDATE_PAYLOAD = "AppUpdatePayload"
     }
 
+    private var currentlyUpdatingAppId: Int = Constants.EMPTY
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding =
             AppUpdateItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -53,14 +55,35 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         notifyDataSetChanged()
     }
 
-    fun removeAppItem(appId: Int) {
-        appsList.removeAt(appId)
-        notifyItemRemoved(appId)
+    fun removeUpdatingApp() {
+        if (currentlyUpdatingAppId != Constants.EMPTY) {
+            appsList.removeAt(currentlyUpdatingAppId)
+            notifyItemRemoved(currentlyUpdatingAppId)
+            currentlyUpdatingAppId = Constants.EMPTY
+        }
     }
 
-    fun updateAppItem(appId: Int, appItem: AppItemUiState, payload: String? = null) {
-        appsList[appId] = appItem
-        notifyItemChanged(appId, payload)
+    fun updateAppItem(appItem: AppItemUiState, payload: String? = null) {
+        if (checkAppByPackage(appItem.packageName)) {
+            appsList[currentlyUpdatingAppId] = appItem
+        } else {
+            val correctAppId = getAppIdByPackage(appItem.packageName)
+            if (correctAppId != Constants.EMPTY) {
+                appsList[correctAppId] = appItem
+                currentlyUpdatingAppId = correctAppId
+            } else {
+                Log.e(Constants.LOG_TAG, "UpdateAppListAdapter: Couldn't find correct app")
+                return
+            }
+        }
+        notifyItemChanged(currentlyUpdatingAppId, payload)
+    }
+
+    private fun checkAppByPackage(packageName: String) =
+        currentlyUpdatingAppId != Constants.EMPTY && appsList[currentlyUpdatingAppId].packageName == packageName
+
+    private fun getAppIdByPackage(packageName: String) = appsList.indexOfFirst { state ->
+        state.packageName == packageName
     }
 
     inner class ViewHolder(private val binding: AppUpdateItemBinding) :

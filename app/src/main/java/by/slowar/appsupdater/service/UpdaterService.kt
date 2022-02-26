@@ -13,16 +13,15 @@ import by.slowar.appsupdater.di.components.DaggerUpdaterServiceComponent
 import by.slowar.appsupdater.service.utils.*
 import javax.inject.Inject
 
-class UpdaterService : Service(), UpdaterServiceManager.Listener {
+class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
     companion object {
 
         const val NOTIFICATION_CHANNEL_ID = "UpdaterServiceNotificationChannelId"
         const val NOTIFICATION_ID = 10000
 
-        const val CHECK_FOR_UPDATE = 1000
-        const val CHECK_ALL_FOR_UPDATES = 1001
-        const val UPDATE_APP = 1002
+        const val CHECK_ALL_FOR_UPDATES = 1000
+        const val UPDATE_APP = 1001
 
         const val UPDATE_APP_STATUS = 2000
 
@@ -45,7 +44,6 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
             activeRequesters[msg.what] = msg.replyTo
 
             when (msg.what) {
-                CHECK_FOR_UPDATE -> checkForUpdate()
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 UPDATE_APP -> installUpdate(msg.data)
                 else -> {
@@ -78,10 +76,6 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
         return serviceMessenger.binder
     }
 
-    private fun checkForUpdate() {
-        TODO("not implemented")
-    }
-
     private fun checkAllForUpdates(data: Bundle) {
         Log.e(Constants.LOG_TAG, "Updater service checkAllForUpdates()")
         data.getStringArrayList(CHECK_ALL_FOR_UPDATES_DATA)?.let { packages ->
@@ -91,8 +85,8 @@ class UpdaterService : Service(), UpdaterServiceManager.Listener {
 
     private fun installUpdate(data: Bundle) {
         updateAppNotificationBuilder = getUpdateAppProgressNotificationBuilder(this)
-        data.getString(UPDATE_APP_DATA)?.let { packageName ->
-            serviceManager.updateApp(packageName)
+        data.getStringArrayList(UPDATE_APP_DATA)?.let { packageName ->
+            serviceManager.updateApps(packageName)
         }
     }
 

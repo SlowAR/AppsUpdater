@@ -1,14 +1,14 @@
 package by.slowar.appsupdater.data.updaterservice
 
-import by.slowar.appsupdater.data.updates.UpdaterRepository
+import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
-import by.slowar.appsupdater.domain.updates.AppUpdate
 import io.reactivex.Observable
+import io.reactivex.Single
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.random.Random
 
-class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
+class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceRepository {
 
     companion object {
         const val HAS_UPDATE_CHANCE = 0.2f
@@ -24,11 +24,19 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
 
     private val noDescriptionText = "The developer did not provide information"
 
-    private var cachedAppsForUpdate = emptyList<AppUpdate>()
+    private var cachedAppsForUpdate = emptyList<AppUpdateDto>()
 
-    override fun checkForUpdates(packages: List<String>): Observable<List<AppUpdate>> {
-        return Observable.create { emitter ->
-            val updateDataList = mutableListOf<AppUpdate>()
+    override fun checkForUpdates(packages: List<String>): Single<List<AppUpdateDto>> {
+        return if (cachedAppsForUpdate.isEmpty()) {
+            generateAppsForUpdate(packages)
+        } else {
+            Single.just(cachedAppsForUpdate)
+        }
+    }
+
+    private fun generateAppsForUpdate(packages: List<String>): Single<List<AppUpdateDto>> {
+        return Single.create { emitter ->
+            val updateDataList = mutableListOf<AppUpdateDto>()
             for (packageName in packages) {
                 if (emitter.isDisposed) {
                     break
@@ -39,13 +47,12 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterRepository {
                     val description = descriptions.random().ifEmpty { noDescriptionText }
                     val updateSize =
                         Random.nextLong(100 * 1024, 30 * 1024 * 1024)     //100Kb - 30Mb
-                    updateDataList.add(AppUpdate(packageName, description, updateSize))
+                    updateDataList.add(AppUpdateDto(packageName, description, updateSize))
                 }
             }
 
             cachedAppsForUpdate = updateDataList
-            emitter.onNext(updateDataList)
-            emitter.onComplete()
+            emitter.onSuccess(updateDataList)
         }
     }
 

@@ -4,30 +4,43 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import by.slowar.appsupdater.common.Constants
+import by.slowar.appsupdater.data.updaterservice.UpdaterServiceRepository
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
-import by.slowar.appsupdater.data.updates.UpdaterRepository
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
-class UpdaterServiceManager @Inject constructor(@FakeEntity private val repository: UpdaterRepository) {
+interface UpdaterServiceManager {
+
+    fun prepare(listener: UpdaterServiceManagerImpl.Listener)
+
+    fun checkAllForUpdates(packages: List<String>)
+
+    fun updateApps(packages: ArrayList<String>)
+
+    fun onClear()
+}
+
+class UpdaterServiceManagerImpl @Inject constructor(
+    @FakeEntity private val repository: UpdaterServiceRepository
+) : UpdaterServiceManager {
 
     var hostListener: Listener? = null
 
     private var checkForUpdatesDisposable: Disposable? = null
     private var updateAppDisposable: Disposable? = null
 
-    private var appsForUpdateList: List<AppUpdateDto> = emptyList()
+    private var appsUnderUpdate: List<String> = emptyList()
 
-    fun prepare(listener: Listener) {
+    override fun prepare(listener: Listener) {
         hostListener = listener
     }
 
-    fun checkAllForUpdates(packages: List<String>) {
-        //TODO fix disposables
+    override fun checkAllForUpdates(packages: List<String>) {
         if (checkForUpdatesDisposable != null) {
             return
         }
@@ -42,15 +55,11 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
                 { error ->
                     Log.e(Constants.LOG_TAG, "checkAllForUpdates: ${error.localizedMessage}")
                     checkForUpdatesDisposable = null
-                },
-                {
-                    checkForUpdatesDisposable = null
                 }
             )
     }
 
     private fun handleCheckAllForUpdateResponse(appsForUpdate: List<AppUpdateDto>) {
-        appsForUpdateList = appsForUpdate
         if (appsForUpdate.isNotEmpty()) {
             hostListener?.showAppsForUpdateInfo(appsForUpdate.size)
         }
@@ -64,12 +73,19 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         hostListener?.sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data)
     }
 
-    fun updateApp(packageName: String) {
-        if (updateAppDisposable != null) {
+    override fun updateApps(packages: ArrayList<String>) {
+        if (updateAppDisposable != null || appsUnderUpdate.isNotEmpty() || packages.isEmpty()) {
             return
+        } else {
+            appsUnderUpdate = packages
         }
 
-        updateAppDisposable = repository.updateApp(packageName)
+        val updateObservables = mutableListOf<Observable<AppUpdateItemStateDto>>()
+        for(packageName in packages) {
+            updateObservables.add(repository.updateApp(packageName))
+        }
+
+        updateAppDisposable = Observable.concat(updateObservables)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
@@ -117,7 +133,7 @@ class UpdaterServiceManager @Inject constructor(@FakeEntity private val reposito
         )
     }
 
-    fun onClear() {
+    override fun onClear() {
         checkForUpdatesDisposable?.dispose()
         updateAppDisposable?.dispose()
         hostListener = null

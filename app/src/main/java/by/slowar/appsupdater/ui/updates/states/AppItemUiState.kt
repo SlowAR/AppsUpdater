@@ -16,6 +16,12 @@ sealed class AppItemUiState(
     open val cancelUpdateAvailable: Boolean
 ) {
 
+    object Empty : AppItemUiState(
+        "", "", "", 0L, null,
+        false, false, false, false,
+        false
+    )
+
     data class Idle(
         override val appName: String,
         override val packageName: String,
@@ -25,16 +31,20 @@ sealed class AppItemUiState(
         override val descriptionVisible: Boolean,
         val onUpdateAction: () -> Unit
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        false,
-        false,
-        true,
-        false
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        false, false, true, false
+    )
+
+    data class Pending(
+        override val appName: String,
+        override val packageName: String,
+        override val description: String,
+        override val updateSize: Long,
+        override val icon: Drawable?,
+        override val descriptionVisible: Boolean
+    ) : AppItemUiState(
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        false, false, true, false
     )
 
     data class Initializing(
@@ -45,16 +55,8 @@ sealed class AppItemUiState(
         override val icon: Drawable?,
         override val descriptionVisible: Boolean
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        true,
-        false,
-        false,
-        true
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        true, false, false, true
     )
 
     data class Downloading(
@@ -67,16 +69,8 @@ sealed class AppItemUiState(
         val downloadedSize: Long = -1,
         val downloadSpeed: Long = -1
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        false,
-        true,
-        false,
-        true
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        false, true, false, true
     ) {
 
         fun getProgressPercent() = (downloadedSize.toDouble() / updateSize * 100).roundToInt()
@@ -90,16 +84,8 @@ sealed class AppItemUiState(
         override val icon: Drawable?,
         override val descriptionVisible: Boolean
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        true,
-        false,
-        false,
-        false
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        true, false, false, false
     )
 
     data class CompletedResult(
@@ -110,16 +96,8 @@ sealed class AppItemUiState(
         override val icon: Drawable?,
         override val descriptionVisible: Boolean
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        false,
-        false,
-        false,
-        false
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        false, false, false, false
     )
 
     data class ErrorResult(
@@ -131,15 +109,7 @@ sealed class AppItemUiState(
         override val descriptionVisible: Boolean,
         val error: Throwable
     ) : AppItemUiState(
-        appName,
-        packageName,
-        description,
-        updateSize,
-        icon,
-        descriptionVisible,
-        false,
-        false,
-        true,
-        false
+        appName, packageName, description, updateSize, icon, descriptionVisible,
+        false, false, true, false
     )
 }

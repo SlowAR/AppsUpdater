@@ -51,26 +51,17 @@ class UpdatesListFragment : Fragment() {
         }
 
         viewModel.updateResult.observe(viewLifecycleOwner) { result ->
-            handleUpdateResult(result)
+            handleCheckForUpdatesResult(result)
         }
 
         viewModel.updatingAppState.observe(viewLifecycleOwner) { itemState ->
-            if (itemState.state is AppItemUiState.CompletedResult) {
-                adapter.removeAppItem(itemState.itemId)
-            } else {
-                val payload = if (itemState.state is AppItemUiState.Idle) {
-                    null
-                } else {
-                    UpdateAppListAdapter.APP_UPDATE_PAYLOAD
-                }
-                adapter.updateAppItem(itemState.itemId, itemState.state, payload)
-            }
+            handleUpdateAppState(itemState)
         }
 
         viewModel.checkForUpdates()
     }
 
-    private fun handleUpdateResult(state: AppUpdateResult) {
+    private fun handleCheckForUpdatesResult(state: AppUpdateResult) {
         when (state) {
             is AppUpdateResult.Loading -> {
                 changeLoadingVisibility(true)
@@ -91,6 +82,19 @@ class UpdatesListFragment : Fragment() {
 
     private fun changeLoadingVisibility(isVisible: Boolean) {
         binding.swipeRefreshLayout.isRefreshing = isVisible
+    }
+
+    private fun handleUpdateAppState(appUpdateState: AppItemUiState) {
+        if (appUpdateState is AppItemUiState.CompletedResult) {
+            adapter.removeUpdatingApp()
+        } else {
+            val payload = if (appUpdateState is AppItemUiState.Idle) {
+                null
+            } else {
+                UpdateAppListAdapter.APP_UPDATE_PAYLOAD
+            }
+            adapter.updateAppItem(appUpdateState, payload)
+        }
     }
 
     override fun onDestroyView() {

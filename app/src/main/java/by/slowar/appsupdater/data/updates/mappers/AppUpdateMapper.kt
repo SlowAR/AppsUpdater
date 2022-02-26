@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.data.updates
+package by.slowar.appsupdater.data.updates.mappers
 
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.domain.installedapps.InstalledApp

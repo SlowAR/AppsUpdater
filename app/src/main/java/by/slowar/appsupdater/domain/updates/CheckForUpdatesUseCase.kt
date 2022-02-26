@@ -1,8 +1,8 @@
 package by.slowar.appsupdater.domain.updates
 
 import by.slowar.appsupdater.data.installedapps.InstalledAppsRepository
-import by.slowar.appsupdater.data.updates.UpdaterRepository
-import by.slowar.appsupdater.data.updates.toModel
+import by.slowar.appsupdater.data.updates.UpdaterClientRepository
+import by.slowar.appsupdater.data.updates.mappers.toModel
 import by.slowar.appsupdater.domain.installedapps.InstalledApp
 import io.reactivex.Single
 import javax.inject.Inject
@@ -13,7 +13,7 @@ interface CheckForUpdatesUseCase {
 }
 
 class CheckForUpdatesUseCaseImpl @Inject constructor(
-    private val updaterRepository: UpdaterRepository,
+    private val updaterRepository: UpdaterClientRepository,
     private val installedAppsRepository: InstalledAppsRepository
 ) : CheckForUpdatesUseCase {
 
@@ -37,7 +37,7 @@ class CheckForUpdatesUseCaseImpl @Inject constructor(
             }
 
     private fun requestAppsForUpdates(installedApps: List<InstalledApp>): Single<List<AppUpdate>> {
-        val packages = installedApps.map { it.packageName }
+        val packages = installedApps.map { it.packageName } as ArrayList
         return updaterRepository.checkForUpdates(packages)
     }
 }

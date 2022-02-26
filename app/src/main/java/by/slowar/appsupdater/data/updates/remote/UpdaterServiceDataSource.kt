@@ -17,21 +17,21 @@ import javax.inject.Inject
 
 interface UpdaterServiceDataSource {
 
-    fun init(): Single<Boolean>
+    fun init(): Single<Unit>
 
-    fun checkAllAppsForUpdates(packages: List<String>): Observable<List<AppUpdateDto>>
+    fun checkAllAppsForUpdates(packages: ArrayList<String>): Single<List<AppUpdateDto>>
 
-    fun updateApp(packageName: String): Observable<AppUpdateItemStateDto>
+    fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
 }
 
 class UpdaterServiceDataSourceImpl @Inject constructor(
     private val appContext: Application
 ) : UpdaterServiceDataSource {
 
-    private var bindServiceSource: SingleSubject<Boolean> = SingleSubject.create()
-    private val checkForUpdatesSource: BehaviorSubject<List<AppUpdateDto>> =
+    private var bindServiceSource: SingleSubject<Unit> = SingleSubject.create()
+    private val checkForUpdatesSource: SingleSubject<List<AppUpdateDto>> = SingleSubject.create()
+    private val updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> =
         BehaviorSubject.create()
-    private val updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> = BehaviorSubject.create()
 
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -51,7 +51,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
             serviceMessenger = Messenger(binder)
             isBound = true
-            bindServiceSource.onSuccess(true)
+            bindServiceSource.onSuccess(Unit)
             Log.e(Constants.LOG_TAG, "Bound to updater service!")
         }
 
@@ -89,30 +89,26 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun init(): Single<Boolean> {
-        if (bindServiceSource.hasValue() || bindServiceSource.hasThrowable()) {
+    override fun init(): Single<Unit> {
+        if (!bindServiceSource.hasValue() || bindServiceSource.hasThrowable()) {
             bindServiceSource = SingleSubject.create()
+            startService()
         }
-        startService()
         return bindServiceSource
     }
 
-    override fun checkAllAppsForUpdates(packages: List<String>): Observable<List<AppUpdateDto>> {
+    override fun checkAllAppsForUpdates(packages: ArrayList<String>): Single<List<AppUpdateDto>> {
         val data = Bundle().apply {
-            if (packages is ArrayList) {    //TODO refactor
-                putStringArrayList(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA, packages)
-            } else {
-                Log.e(Constants.LOG_TAG, "packages list should be an ArrayList")
-            }
+            putStringArrayList(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA, packages)
         }
         sendMessage(UpdaterService.CHECK_ALL_FOR_UPDATES, data, true)
 
         return checkForUpdatesSource
     }
 
-    override fun updateApp(packageName: String): Observable<AppUpdateItemStateDto> {
+    override fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto> {
         val data = Bundle().apply {
-            putString(UpdaterService.UPDATE_APP_DATA, packageName)
+            putStringArrayList(UpdaterService.UPDATE_APP_DATA, packages)
         }
         sendMessage(UpdaterService.UPDATE_APP, data, true)
         return updateAppStatusSource
@@ -122,14 +118,16 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         Log.e(Constants.LOG_TAG, "Received apps for update from service")
         data.getParcelableArrayList<AppUpdateDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
             Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
-            checkForUpdatesSource.onNext(it)
+            checkForUpdatesSource.onSuccess(it)
         }
+            ?: checkForUpdatesSource.onError(IllegalStateException("Couldn't receive apps for update"))
     }
 
     private fun handleUpdateAppStatus(data: Bundle) {
-        data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)?.let { state ->
-            updateAppStatusSource.onNext(state)
-        }
+        data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)
+            ?.let { states ->
+                updateAppStatusSource.onNext(states)
+            }
     }
 
     private fun sendMessage(requestId: Int, data: Bundle? = null, needToReply: Boolean = false) {

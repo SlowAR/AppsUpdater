@@ -1,25 +1,17 @@
 package by.slowar.appsupdater.data.updates.remote
 
 import android.os.Parcelable
-import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import kotlinx.parcelize.Parcelize
 
 sealed class AppUpdateItemStateDto(open val packageName: String) : Parcelable {
 
     @Parcelize
+    data class Pending(override val packageName: String, val data: String? = null) :
+        AppUpdateItemStateDto(packageName)
+
+    @Parcelize
     data class Initializing(override val packageName: String, val data: String? = null) :
-        AppUpdateItemStateDto(packageName) {
-        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.Initializing {
-            return AppItemUiState.Initializing(
-                oldUiState.appName,
-                oldUiState.packageName,
-                oldUiState.description,
-                oldUiState.updateSize,
-                oldUiState.icon,
-                oldUiState.descriptionVisible
-            )
-        }
-    }
+        AppUpdateItemStateDto(packageName)
 
     @Parcelize
     data class Downloading(
@@ -27,66 +19,19 @@ sealed class AppUpdateItemStateDto(open val packageName: String) : Parcelable {
         val downloadedBytes: Long,
         val totalBytes: Long,
         val downloadSpeedBytes: Long
-    ) : AppUpdateItemStateDto(packageName) {
-        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.Downloading {
-            return AppItemUiState.Downloading(
-                oldUiState.appName,
-                oldUiState.packageName,
-                oldUiState.description,
-                oldUiState.updateSize,
-                oldUiState.icon,
-                oldUiState.descriptionVisible,
-                downloadedBytes,
-                downloadSpeedBytes
-            )
-        }
-    }
+    ) : AppUpdateItemStateDto(packageName)
 
     @Parcelize
     data class Installing(override val packageName: String, val data: String? = null) :
-        AppUpdateItemStateDto(packageName) {
-        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.Installing {
-            return AppItemUiState.Installing(
-                oldUiState.appName,
-                oldUiState.packageName,
-                oldUiState.description,
-                oldUiState.updateSize,
-                oldUiState.icon,
-                oldUiState.descriptionVisible,
-            )
-        }
-    }
+        AppUpdateItemStateDto(packageName)
 
     @Parcelize
     data class CompletedResult(override val packageName: String, val data: String? = null) :
-        AppUpdateItemStateDto(packageName) {
-        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.CompletedResult {
-            return AppItemUiState.CompletedResult(
-                oldUiState.appName,
-                oldUiState.packageName,
-                oldUiState.description,
-                oldUiState.updateSize,
-                oldUiState.icon,
-                oldUiState.descriptionVisible,
-            )
-        }
-    }
+        AppUpdateItemStateDto(packageName)
 
     @Parcelize
     data class ErrorResult(override val packageName: String, val error: Throwable) :
-        AppUpdateItemStateDto(packageName) {
-        override fun toUiState(oldUiState: AppItemUiState): AppItemUiState.ErrorResult {
-            return AppItemUiState.ErrorResult(
-                oldUiState.appName,
-                oldUiState.packageName,
-                oldUiState.description,
-                oldUiState.updateSize,
-                oldUiState.icon,
-                oldUiState.descriptionVisible,
-                error
-            )
-        }
-    }
+        AppUpdateItemStateDto(packageName)
 
-    abstract fun toUiState(oldUiState: AppItemUiState): AppItemUiState
+    fun isUpdating() = this is Initializing || this is Downloading || this is Installing
 }
