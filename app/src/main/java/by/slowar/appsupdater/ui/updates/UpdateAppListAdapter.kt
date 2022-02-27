@@ -103,12 +103,8 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
 
         fun bindPayload(appItemState: AppItemUiState) {
             when (appItemState) {
-                is AppItemUiState.Idle -> {
-                    Log.e(
-                        Constants.LOG_TAG,
-                        "bindPayload: idle (shouldn't be here - notify without payload tag)"
-                    )
-                }
+                is AppItemUiState.Empty -> Log.e(Constants.LOG_TAG, "bindPayload: empty")
+                is AppItemUiState.Idle -> Log.e(Constants.LOG_TAG, "bindPayload: idle")
                 is AppItemUiState.Pending -> handlePendingState(appItemState)
                 is AppItemUiState.Initializing -> handleInitializeState(appItemState)
                 is AppItemUiState.Downloading -> handleDownloadingState(appItemState)
@@ -180,7 +176,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
             binding.updateButton.visibility = isVisible(uiState.updateAvailable)
         }
 
-        private fun isVisible(isVisible: Boolean) = if (isVisible) View.VISIBLE else View.INVISIBLE
+        private fun isVisible(isVisible: Boolean) = if (isVisible) View.VISIBLE else View.GONE
 
         private fun toggleDescriptionVisibility() {
             if (binding.updateInfoText.visibility == View.VISIBLE) {
@@ -192,12 +188,13 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
 
         private fun showDescriptionText() {
             binding.updateInfoText.visibility = View.VISIBLE
+            binding.showInfoButton.rotation = 0f
             binding.showInfoButton.animate().rotation(180f)
         }
 
         private fun hideDescriptionText() {
             binding.updateInfoText.visibility = View.GONE
-            binding.showInfoButton.animate().rotation(0f)
+            binding.showInfoButton.animate().rotation(360f)
         }
 
         private fun setStatusText(status: String, updateSize: Long = 0) {

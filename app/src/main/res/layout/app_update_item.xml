@@ -6,7 +6,7 @@
     <data class="by.slowar.appsupdater.data.AppUpdateItemBinding">
 
         <import type="android.view.View" />
-        
+
         <variable
             name="appItemState"
             type="by.slowar.appsupdater.ui.updates.states.AppItemUiState" />
@@ -109,7 +109,7 @@
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="9dp"
             android:text="@string/update"
-            android:visibility="@{appItemState.updateAvailable ? View.VISIBLE : View.INVISIBLE}"
+            android:visibility="@{appItemState.updateAvailable ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -135,6 +135,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bottomBarrier"
-            tools:text="Some update info of app" />
+            tools:text="Some update info of app"
+            tools:visibility="gone" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
