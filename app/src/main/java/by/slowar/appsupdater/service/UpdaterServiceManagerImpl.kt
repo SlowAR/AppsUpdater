@@ -8,6 +8,7 @@ import by.slowar.appsupdater.data.updaterservice.UpdaterServiceRepository
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
+import by.slowar.appsupdater.di.scopes.ServiceScope
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -25,6 +26,7 @@ interface UpdaterServiceManager {
     fun onClear()
 }
 
+@ServiceScope
 class UpdaterServiceManagerImpl @Inject constructor(
     @FakeEntity private val repository: UpdaterServiceRepository
 ) : UpdaterServiceManager {
@@ -33,8 +35,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
 
     private var checkForUpdatesDisposable: Disposable? = null
     private var updateAppDisposable: Disposable? = null
-
-    private var appsUnderUpdate: List<String> = emptyList()
+    private var lastUpdateAppPackage: String = ""
 
     override fun prepare(listener: Listener) {
         hostListener = listener
@@ -74,14 +75,14 @@ class UpdaterServiceManagerImpl @Inject constructor(
     }
 
     override fun updateApps(packages: ArrayList<String>) {
-        if (updateAppDisposable != null || appsUnderUpdate.isNotEmpty() || packages.isEmpty()) {
+        if (updateAppDisposable != null || packages.isEmpty()) {
             return
-        } else {
-            appsUnderUpdate = packages
         }
 
+        lastUpdateAppPackage = packages.last()
+
         val updateObservables = mutableListOf<Observable<AppUpdateItemStateDto>>()
-        for(packageName in packages) {
+        for (packageName in packages) {
             updateObservables.add(repository.updateApp(packageName))
         }
 
@@ -94,10 +95,10 @@ class UpdaterServiceManagerImpl @Inject constructor(
                 },
                 { error ->
                     Log.e(Constants.LOG_TAG, "updateApp: ${error.localizedMessage}")
-                    updateAppDisposable = null
+                    finishUpdate()
                 },
                 {
-                    updateAppDisposable = null
+                    finishUpdate()
                 }
             )
     }
@@ -119,18 +120,26 @@ class UpdaterServiceManagerImpl @Inject constructor(
             else -> Log.e(Constants.LOG_TAG, updateState.toString())
         }
 
+        val isLastMessage = updateState is AppUpdateItemStateDto.CompletedResult ||
+                updateState is AppUpdateItemStateDto.ErrorResult
+        val isLastApp = updateState.packageName == lastUpdateAppPackage
+
         val statusData = Bundle().apply {
             putParcelable(UpdaterService.UPDATE_APP_STATUS_DATA, updateState)
+            putBoolean(UpdaterService.LAST_UPDATE_APP, isLastApp)
         }
 
-        val isLastMessage =
-            updateState is AppUpdateItemStateDto.CompletedResult || updateState is AppUpdateItemStateDto.ErrorResult
         hostListener?.sendStatusMessage(
             UpdaterService.UPDATE_APP,
             UpdaterService.UPDATE_APP_STATUS,
             statusData,
             isLastMessage
         )
+    }
+
+    private fun finishUpdate() {
+        updateAppDisposable = null
+        lastUpdateAppPackage = ""
     }
 
     override fun onClear() {
@@ -151,6 +160,11 @@ class UpdaterServiceManagerImpl @Inject constructor(
 
         fun sendMessage(requestId: Int, data: Bundle?)
 
-        fun sendStatusMessage(requestId: Int, statusId: Int, data: Bundle?, isLastMessage: Boolean)
+        fun sendStatusMessage(
+            requestId: Int,
+            statusId: Int,
+            data: Bundle?,
+            isLastMessage: Boolean
+        )
     }
 }

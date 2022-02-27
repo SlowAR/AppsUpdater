@@ -28,6 +28,7 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         const val CHECK_ALL_FOR_UPDATES_DATA = "CheckAllForUpdatesData"
         const val UPDATE_APP_DATA = "UpdateAppData"
         const val UPDATE_APP_STATUS_DATA = "UpdateAppStatusData"
+        const val LAST_UPDATE_APP = "LastUpdateApp"
     }
 
     private lateinit var notificationManager: NotificationManager

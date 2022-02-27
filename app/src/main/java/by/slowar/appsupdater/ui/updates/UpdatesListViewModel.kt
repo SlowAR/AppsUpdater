@@ -16,7 +16,6 @@ import by.slowar.appsupdater.domain.updates.AppUpdateItem
 import by.slowar.appsupdater.domain.updates.CheckForUpdatesUseCaseImpl
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -34,9 +33,10 @@ class UpdatesListViewModel(
 
     private var updateAppsMetadata: MutableList<AppItemUiState> = mutableListOf()
     private var updatingAppPreviousState: AppItemUiState = AppItemUiState.Empty
+    private val appsForUpdateQueue = mutableListOf<String>()
 
     private var checkForUpdatesDisposable: Disposable? = null
-    private val appUpdateDisposables = CompositeDisposable()
+    private var appUpdateDisposable: Disposable? = null
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
         checkForUpdatesDisposable?.let { disposable ->
@@ -78,15 +78,32 @@ class UpdatesListViewModel(
 
     private fun updateApp(packageName: String) {
         setPendingUiState(packageName)
+        appsForUpdateQueue.add(packageName)
+        updateAppsQueue()
+    }
 
-        val disposable = updaterRepository.updateApps(arrayListOf(packageName))
+    private fun updateAppsQueue() {
+        if (appUpdateDisposable != null || appsForUpdateQueue.isEmpty()) {
+            return
+        }
+
+        appUpdateDisposable = updaterRepository.updateApps(ArrayList(appsForUpdateQueue))
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { state -> handleUpdateAppState(state) },
-                { error -> handleError(error) }
+                { state ->
+                    handleUpdateAppState(state)
+                },
+                { error ->
+                    handleError(error)
+                    finishAppsUpdate()
+                },
+                {
+                    finishAppsUpdate()
+                }
             )
-        appUpdateDisposables.add(disposable)
+
+        appsForUpdateQueue.clear()
     }
 
     fun updateAllApps() {
@@ -151,10 +168,15 @@ class UpdatesListViewModel(
         _updateResult.value = AppUpdateResult.ErrorResult(errorStringId)
     }
 
+    private fun finishAppsUpdate() {
+        appUpdateDisposable = null
+        updateAppsQueue()
+    }
+
     override fun onCleared() {
         super.onCleared()
         checkForUpdatesDisposable?.dispose()
-        appUpdateDisposables.clear()
+        appUpdateDisposable?.dispose()
     }
 
     class Factory @Inject constructor(

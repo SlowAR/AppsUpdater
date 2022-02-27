@@ -30,7 +30,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
 
     private var bindServiceSource: SingleSubject<Unit> = SingleSubject.create()
     private val checkForUpdatesSource: SingleSubject<List<AppUpdateDto>> = SingleSubject.create()
-    private val updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> =
+    private var updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> =
         BehaviorSubject.create()
 
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
@@ -107,6 +107,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     }
 
     override fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto> {
+        updateAppStatusSource = BehaviorSubject.create()
         val data = Bundle().apply {
             putStringArrayList(UpdaterService.UPDATE_APP_DATA, packages)
         }
@@ -126,7 +127,16 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     private fun handleUpdateAppStatus(data: Bundle) {
         data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)
             ?.let { states ->
-                updateAppStatusSource.onNext(states)
+                when (states) {
+                    is AppUpdateItemStateDto.CompletedResult -> {
+                        updateAppStatusSource.onNext(states)
+                        if (data.getBoolean(UpdaterService.LAST_UPDATE_APP, false)) {
+                            updateAppStatusSource.onComplete()
+                        }
+                    }
+                    is AppUpdateItemStateDto.ErrorResult -> updateAppStatusSource.onError(states.error)
+                    else -> updateAppStatusSource.onNext(states)
+                }
             }
     }
 

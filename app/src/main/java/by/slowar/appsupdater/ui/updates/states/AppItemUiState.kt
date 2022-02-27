@@ -44,7 +44,7 @@ sealed class AppItemUiState(
         override val descriptionVisible: Boolean
     ) : AppItemUiState(
         appName, packageName, description, updateSize, icon, descriptionVisible,
-        false, false, true, false
+        true, false, false, true
     )
 
     data class Initializing(

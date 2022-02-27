@@ -109,12 +109,18 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
                         "bindPayload: idle (shouldn't be here - notify without payload tag)"
                     )
                 }
+                is AppItemUiState.Pending -> handlePendingState(appItemState)
                 is AppItemUiState.Initializing -> handleInitializeState(appItemState)
                 is AppItemUiState.Downloading -> handleDownloadingState(appItemState)
                 is AppItemUiState.Installing -> handleInstallingState(appItemState)
                 is AppItemUiState.CompletedResult -> handleCompletedState(appItemState)
                 is AppItemUiState.ErrorResult -> handleErrorState(appItemState)
             }
+        }
+
+        private fun handlePendingState(uiState: AppItemUiState.Pending) {
+            handleDefaultStateData(uiState)
+            setStatusText(R.string.pending_text)
         }
 
         private fun handleInitializeState(uiState: AppItemUiState.Initializing) {

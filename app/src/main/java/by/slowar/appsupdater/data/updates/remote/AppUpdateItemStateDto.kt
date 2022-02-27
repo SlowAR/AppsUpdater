@@ -33,5 +33,6 @@ sealed class AppUpdateItemStateDto(open val packageName: String) : Parcelable {
     data class ErrorResult(override val packageName: String, val error: Throwable) :
         AppUpdateItemStateDto(packageName)
 
-    fun isUpdating() = this is Initializing || this is Downloading || this is Installing
+    fun isUpdating() = this is Initializing || this is Downloading || this is Installing ||
+            this is CompletedResult || this is ErrorResult
 }
