@@ -107,18 +107,37 @@ class UpdatesListViewModel(
     }
 
     fun updateAllApps() {
-        if (updateAppsMetadata.isNotEmpty()) {
-            _updateResult.value = AppUpdateResult.SuccessResult(
-                updateAppsMetadata.map { it.toPendingUiState() }
-            )
+        if (updateAppsMetadata.isNotEmpty() && appUpdateDisposable == null) {
+            setPendingUiStateAll()
 
-            //...
+            val packagesList = updateAppsMetadata.map { it.packageName } as ArrayList<String>
+
+            appUpdateDisposable = updaterRepository.updateApps(packagesList)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { state ->
+                        handleUpdateAppState(state)
+                    },
+                    { error ->
+                        handleError(error)
+                        finishAppsUpdate()
+                    },
+                    {
+                        finishAppsUpdate()
+                    }
+                )
         }
     }
 
     private fun setPendingUiState(packageName: String) {
         val idleStateAppId = updateAppsMetadata.indexOfFirst { it.packageName == packageName }
         _updatingAppState.value = updateAppsMetadata[idleStateAppId].toPendingUiState()
+    }
+
+    private fun setPendingUiStateAll() {
+        val pendingUiStates = updateAppsMetadata.map { it.toPendingUiState() }
+        _updateResult.value = AppUpdateResult.SuccessResult(pendingUiStates)
     }
 
     private fun handleUpdateAppState(appUpdateState: AppUpdateItemStateDto) {

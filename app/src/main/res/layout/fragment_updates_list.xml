@@ -24,6 +24,71 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:listitem="@layout/app_update_item" />
+            tools:listitem="@layout/app_update_item"
+            tools:visibility="invisible" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/noUpdatesGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:constraint_referenced_ids="noUpdatesImage, noUpdatesText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="invisible" />
+
+    <ImageView
+        android:id="@+id/noUpdatesImage"
+        android:layout_width="@dimen/app_icon_size"
+        android:layout_height="@dimen/app_icon_size"
+        app:layout_constraintBottom_toTopOf="@id/noUpdatesText"
+        app:layout_constraintEnd_toEndOf="@id/noUpdatesGroup"
+        app:layout_constraintStart_toStartOf="@id/noUpdatesGroup"
+        app:layout_constraintTop_toTopOf="@id/noUpdatesGroup"
+        app:srcCompat="@drawable/ic_baseline_check_24" />
+
+    <TextView
+        android:id="@+id/noUpdatesText"
+        style="@style/StatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/all_apps_updated"
+        app:layout_constraintEnd_toEndOf="@id/noUpdatesGroup"
+        app:layout_constraintStart_toStartOf="@id/noUpdatesGroup"
+        app:layout_constraintTop_toBottomOf="@id/noUpdatesImage" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/errorUpdatesGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:constraint_referenced_ids="errorUpdatesImage, errorUpdatesText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="invisible" />
+
+    <ImageView
+        android:id="@+id/errorUpdatesImage"
+        android:layout_width="@dimen/app_icon_size"
+        android:layout_height="@dimen/app_icon_size"
+        app:layout_constraintBottom_toTopOf="@id/errorUpdatesText"
+        app:layout_constraintEnd_toEndOf="@id/errorUpdatesGroup"
+        app:layout_constraintStart_toStartOf="@id/errorUpdatesGroup"
+        app:layout_constraintTop_toTopOf="@id/errorUpdatesGroup"
+        app:srcCompat="@drawable/ic_baseline_cancel_24" />
+
+    <TextView
+        android:id="@+id/errorUpdatesText"
+        style="@style/StatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/error_getting_updates"
+        app:layout_constraintEnd_toEndOf="@id/errorUpdatesGroup"
+        app:layout_constraintStart_toStartOf="@id/errorUpdatesGroup"
+        app:layout_constraintTop_toBottomOf="@id/errorUpdatesImage" />
 </androidx.constraintlayout.widget.ConstraintLayout>

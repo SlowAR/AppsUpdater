@@ -18,4 +18,6 @@
     <string name="update_error">Update failed…</string>
     <string name="successfully_updated">successfully updated!</string>
     <string name="per_second_word">/s</string>
+    <string name="all_apps_updated">All apps have been updated!</string>
+    <string name="error_getting_updates">Error getting list of updates occurred!</string>
 </resources>

@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import by.slowar.appsupdater.UpdaterApp
@@ -65,16 +66,20 @@ class UpdatesListFragment : Fragment() {
         when (state) {
             is AppUpdateResult.Loading -> {
                 changeLoadingVisibility(true)
+                changeUpdatesStatus(UpdatesStatus.List)
             }
             AppUpdateResult.EmptyResult -> {
                 changeLoadingVisibility(false)
+                changeUpdatesStatus(UpdatesStatus.Empty)
             }
             is AppUpdateResult.ErrorResult -> {
                 changeLoadingVisibility(false)
+                changeUpdatesStatus(UpdatesStatus.Error)
                 Toast.makeText(context, state.errorId, Toast.LENGTH_LONG).show()
             }
             is AppUpdateResult.SuccessResult -> {
                 changeLoadingVisibility(false)
+                changeUpdatesStatus(UpdatesStatus.List)
                 adapter.setNewAppList(state.result)
             }
         }
@@ -82,6 +87,26 @@ class UpdatesListFragment : Fragment() {
 
     private fun changeLoadingVisibility(isVisible: Boolean) {
         binding.swipeRefreshLayout.isRefreshing = isVisible
+    }
+
+    private fun changeUpdatesStatus(status: UpdatesStatus) {
+        when (status) {
+            UpdatesStatus.Empty -> {
+                binding.appsRecyclerView.isVisible = !isVisible
+                binding.errorUpdatesGroup.isVisible = !isVisible
+                binding.noUpdatesGroup.isVisible = isVisible
+            }
+            UpdatesStatus.Error -> {
+                binding.appsRecyclerView.isVisible = !isVisible
+                binding.errorUpdatesGroup.isVisible = isVisible
+                binding.noUpdatesGroup.isVisible = !isVisible
+            }
+            UpdatesStatus.List -> {
+                binding.appsRecyclerView.isVisible = isVisible
+                binding.errorUpdatesGroup.isVisible = !isVisible
+                binding.noUpdatesGroup.isVisible = !isVisible
+            }
+        }
     }
 
     private fun handleUpdateAppState(appUpdateState: AppItemUiState) {
@@ -95,6 +120,10 @@ class UpdatesListFragment : Fragment() {
             }
             adapter.updateAppItem(appUpdateState, payload)
         }
+    }
+
+    fun onUpdateAllAppsClick() {
+        viewModel.updateAllApps()
     }
 
     override fun onDestroyView() {
