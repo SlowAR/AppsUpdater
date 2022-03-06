@@ -108,8 +108,12 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
 
     override fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto> {
         updateAppStatusSource = BehaviorSubject.create()
-        val data = Bundle().apply {
-            putStringArrayList(UpdaterService.UPDATE_APP_DATA, packages)
+        val data = if (packages.isEmpty()) {
+            null
+        } else {
+            Bundle().apply {
+                putStringArrayList(UpdaterService.UPDATE_APP_DATA, packages)
+            }
         }
         sendMessage(UpdaterService.UPDATE_APP, data, true)
         return updateAppStatusSource
@@ -130,7 +134,8 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
                 when (states) {
                     is AppUpdateItemStateDto.CompletedResult -> {
                         updateAppStatusSource.onNext(states)
-                        if (data.getBoolean(UpdaterService.LAST_UPDATE_APP, false)) {
+                        val isLastApp = data.getBoolean(UpdaterService.LAST_UPDATE_APP, false)
+                        if (isLastApp) {
                             updateAppStatusSource.onComplete()
                         }
                     }

@@ -31,7 +31,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(appsList[position])
+        holder.bind(appsList[position], true)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
@@ -40,7 +40,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         } else {
             for (payload in payloads) {
                 if (payload == APP_UPDATE_PAYLOAD) {
-                    holder.bindPayload(appsList[position])
+                    holder.bind(appsList[position])
                 }
             }
         }
@@ -89,22 +89,10 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     inner class ViewHolder(private val binding: AppUpdateItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(appItemState: AppItemUiState) {
-            binding.appItemState = appItemState
-            setStatusText("", appItemState.updateSize)
-            binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
-
-            if (appItemState is AppItemUiState.Idle) {
-                binding.updateButton.setOnClickListener { appItemState.onUpdateAction() }
-            }
-
-            binding.executePendingBindings()
-        }
-
-        fun bindPayload(appItemState: AppItemUiState) {
+        fun bind(appItemState: AppItemUiState, refresh: Boolean = false) {
             when (appItemState) {
                 is AppItemUiState.Empty -> Log.e(Constants.LOG_TAG, "bindPayload: empty")
-                is AppItemUiState.Idle -> Log.e(Constants.LOG_TAG, "bindPayload: idle")
+                is AppItemUiState.Idle -> handleIdleState(appItemState)
                 is AppItemUiState.Pending -> handlePendingState(appItemState)
                 is AppItemUiState.Initializing -> handleInitializeState(appItemState)
                 is AppItemUiState.Downloading -> handleDownloadingState(appItemState)
@@ -112,6 +100,17 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
                 is AppItemUiState.CompletedResult -> handleCompletedState(appItemState)
                 is AppItemUiState.ErrorResult -> handleErrorState(appItemState)
             }
+
+            if (refresh) {
+                binding.executePendingBindings()
+            }
+        }
+
+        private fun handleIdleState(uiState: AppItemUiState.Idle) {
+            binding.appItemState = uiState
+            setStatusText("", uiState.updateSize)
+            binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
+            binding.updateButton.setOnClickListener { uiState.onUpdateAction() }
         }
 
         private fun handlePendingState(uiState: AppItemUiState.Pending) {
@@ -152,6 +151,8 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         }
 
         private fun handleDefaultStateData(uiState: AppItemUiState) {
+            binding.appIcon.setImageDrawable(uiState.icon)
+
             val isShowingFirstProgress = binding.taskProgressBar.visibility != View.VISIBLE &&
                     binding.downloadProgressBar.visibility != View.VISIBLE &&
                     uiState.taskProgressVisible

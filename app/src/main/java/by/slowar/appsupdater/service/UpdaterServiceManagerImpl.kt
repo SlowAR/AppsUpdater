@@ -42,6 +42,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
     }
 
     override fun checkAllForUpdates(packages: List<String>) {
+        Log.e(Constants.LOG_TAG, "checkAllForUpdates: $checkForUpdatesDisposable")
         if (checkForUpdatesDisposable != null) {
             return
         }
@@ -52,6 +53,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
             .subscribe(
                 { appsForUpdate ->
                     handleCheckAllForUpdateResponse(appsForUpdate)
+                    checkForUpdatesDisposable = null
                 },
                 { error ->
                     Log.e(Constants.LOG_TAG, "checkAllForUpdates: ${error.localizedMessage}")
@@ -120,9 +122,10 @@ class UpdaterServiceManagerImpl @Inject constructor(
             else -> Log.e(Constants.LOG_TAG, updateState.toString())
         }
 
-        val isLastMessage = updateState is AppUpdateItemStateDto.CompletedResult ||
-                updateState is AppUpdateItemStateDto.ErrorResult
         val isLastApp = updateState.packageName == lastUpdateAppPackage
+        val isLastMessage = (updateState is AppUpdateItemStateDto.CompletedResult ||
+                updateState is AppUpdateItemStateDto.ErrorResult) &&
+                isLastApp
 
         val statusData = Bundle().apply {
             putParcelable(UpdaterService.UPDATE_APP_STATUS_DATA, updateState)

@@ -59,7 +59,7 @@ class UpdatesListFragment : Fragment() {
             handleUpdateAppState(itemState)
         }
 
-        viewModel.checkForUpdates()
+        viewModel.checkUpdatesStatus()
     }
 
     private fun handleCheckForUpdatesResult(state: AppUpdateResult) {
@@ -92,19 +92,19 @@ class UpdatesListFragment : Fragment() {
     private fun changeUpdatesStatus(status: UpdatesStatus) {
         when (status) {
             UpdatesStatus.Empty -> {
-                binding.appsRecyclerView.isVisible = !isVisible
-                binding.errorUpdatesGroup.isVisible = !isVisible
-                binding.noUpdatesGroup.isVisible = isVisible
+                binding.appsRecyclerView.isVisible = false
+                binding.errorUpdatesGroup.isVisible = false
+                binding.noUpdatesGroup.isVisible = true
             }
             UpdatesStatus.Error -> {
-                binding.appsRecyclerView.isVisible = !isVisible
-                binding.errorUpdatesGroup.isVisible = isVisible
-                binding.noUpdatesGroup.isVisible = !isVisible
+                binding.appsRecyclerView.isVisible = false
+                binding.errorUpdatesGroup.isVisible = true
+                binding.noUpdatesGroup.isVisible = false
             }
             UpdatesStatus.List -> {
-                binding.appsRecyclerView.isVisible = isVisible
-                binding.errorUpdatesGroup.isVisible = !isVisible
-                binding.noUpdatesGroup.isVisible = !isVisible
+                binding.appsRecyclerView.isVisible = true
+                binding.errorUpdatesGroup.isVisible = false
+                binding.noUpdatesGroup.isVisible = false
             }
         }
     }

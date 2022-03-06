@@ -24,7 +24,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
 
     private val noDescriptionText = "The developer did not provide information"
 
-    private var cachedAppsForUpdate = emptyList<AppUpdateDto>()
+    private var cachedAppsForUpdate = mutableListOf<AppUpdateDto>()
 
     override fun checkForUpdates(packages: List<String>): Single<List<AppUpdateDto>> {
         return if (cachedAppsForUpdate.isEmpty()) {
@@ -99,6 +99,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
 
                 emitter.onNext(AppUpdateItemStateDto.CompletedResult(app.appPackage))
                 emitter.onComplete()
+                cachedAppsForUpdate.remove(app)
             }
         }
     }

@@ -38,6 +38,11 @@ class UpdatesListViewModel(
     private var checkForUpdatesDisposable: Disposable? = null
     private var appUpdateDisposable: Disposable? = null
 
+    fun checkUpdatesStatus() {
+        checkForUpdates()
+        updateAppsQueue(true)
+    }
+
     fun checkForUpdates(forceRefresh: Boolean = false) {
         checkForUpdatesDisposable?.let { disposable ->
             if (forceRefresh) {
@@ -82,8 +87,12 @@ class UpdatesListViewModel(
         updateAppsQueue()
     }
 
-    private fun updateAppsQueue() {
-        if (appUpdateDisposable != null || appsForUpdateQueue.isEmpty()) {
+    private fun updateAppsQueue(echo: Boolean = false) {
+        Log.e(Constants.LOG_TAG, "updateAppsQueue(): echo $echo, disposable $appUpdateDisposable, list: ${appsForUpdateQueue.size}")
+        if (appUpdateDisposable != null) {
+            return
+        }
+        if (appsForUpdateQueue.isEmpty() && !echo) {
             return
         }
 
@@ -103,7 +112,11 @@ class UpdatesListViewModel(
                 }
             )
 
-        appsForUpdateQueue.clear()
+        if (echo) {
+            appUpdateDisposable = null
+        } else {
+            appsForUpdateQueue.clear()
+        }
     }
 
     fun updateAllApps() {

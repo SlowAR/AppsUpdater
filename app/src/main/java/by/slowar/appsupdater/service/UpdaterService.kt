@@ -36,8 +36,13 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
+            Log.e(
+                Constants.LOG_TAG,
+                "handleMessage() service: $activeRequesters, msg $msg, reply old ${activeRequesters[msg.what]}, new ${msg.replyTo}"
+            )
             if (activeRequesters.containsKey(msg.what)) {
-                Log.e(Constants.LOG_TAG, "Request already running")
+                Log.e(Constants.LOG_TAG, "Request already running, replacing")
+                activeRequesters[msg.what] = msg.replyTo
                 super.handleMessage(msg)
                 return
             }
@@ -48,7 +53,7 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 UPDATE_APP -> installUpdate(msg.data)
                 else -> {
-                    activeRequesters.remove(msg.what)
+                    removeActiveRequester(msg.what)
                     super.handleMessage(msg)
                 }
             }
@@ -58,6 +63,8 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     private val serviceMessenger = Messenger(serviceHandler)
 
     private val activeRequesters = mutableMapOf<Int, Messenger>()
+
+    private var isForeground = false
 
     @Inject
     lateinit var serviceManager: UpdaterServiceManager
@@ -85,9 +92,16 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     private fun installUpdate(data: Bundle) {
-        updateAppNotificationBuilder = getUpdateAppProgressNotificationBuilder(this)
-        data.getStringArrayList(UPDATE_APP_DATA)?.let { packageName ->
-            serviceManager.updateApps(packageName)
+        val packageNames = data.getStringArrayList(UPDATE_APP_DATA) ?: ArrayList()
+        if (packageNames.isEmpty()) {
+            return
+        }
+
+        serviceManager.updateApps(packageNames)
+        if (!isForeground) {
+            updateAppNotificationBuilder = getUpdateAppProgressNotificationBuilder(this)
+            startForeground(NOTIFICATION_ID, updateAppNotificationBuilder.build())
+            isForeground = true
         }
     }
 
@@ -128,7 +142,7 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     override fun sendMessage(requestId: Int, data: Bundle?) {
         val message = obtainMessage(requestId, data)
         Log.e(Constants.LOG_TAG, "Sending message to client: $message")
-        activeRequesters.remove(requestId)?.send(message)
+        removeActiveRequester(requestId)?.send(message)
     }
 
     override fun sendStatusMessage(
@@ -142,7 +156,7 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         Log.e(Constants.LOG_TAG, "Sending status message to client: $message")
 
         if (isLastMessage) {
-            activeRequesters.remove(requestId)?.send(message)
+            removeActiveRequester(requestId)?.send(message)
         } else {
             activeRequesters[requestId]?.send(message)
         }
@@ -165,6 +179,15 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
             )
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    private fun removeActiveRequester(id: Int): Messenger? {
+        val lastRequester = activeRequesters.remove(id)
+        if (activeRequesters.isEmpty() && isForeground) {
+            stopForeground(false)
+            isForeground = false
+        }
+        return lastRequester
     }
 
     override fun onDestroy() {
