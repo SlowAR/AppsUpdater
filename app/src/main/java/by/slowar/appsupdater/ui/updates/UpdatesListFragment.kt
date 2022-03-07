@@ -59,7 +59,7 @@ class UpdatesListFragment : Fragment() {
             handleUpdateAppState(itemState)
         }
 
-        viewModel.checkUpdatesStatus()
+        viewModel.checkForUpdates()
     }
 
     private fun handleCheckForUpdatesResult(state: AppUpdateResult) {

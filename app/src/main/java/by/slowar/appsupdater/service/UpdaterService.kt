@@ -36,24 +36,14 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            Log.e(
-                Constants.LOG_TAG,
-                "handleMessage() service: $activeRequesters, msg $msg, reply old ${activeRequesters[msg.what]}, new ${msg.replyTo}"
-            )
-            if (activeRequesters.containsKey(msg.what)) {
-                Log.e(Constants.LOG_TAG, "Request already running, replacing")
-                activeRequesters[msg.what] = msg.replyTo
-                super.handleMessage(msg)
-                return
-            }
-
-            activeRequesters[msg.what] = msg.replyTo
+            lastClientMessenger = msg.replyTo
+            activeRequests.add(msg.what)
 
             when (msg.what) {
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 UPDATE_APP -> installUpdate(msg.data)
                 else -> {
-                    removeActiveRequester(msg.what)
+                    removeActiveRequest(msg.what)
                     super.handleMessage(msg)
                 }
             }
@@ -61,8 +51,9 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     private val serviceMessenger = Messenger(serviceHandler)
+    private var lastClientMessenger: Messenger? = null
 
-    private val activeRequesters = mutableMapOf<Int, Messenger>()
+    private val activeRequests = mutableListOf<Int>()
 
     private var isForeground = false
 
@@ -140,9 +131,14 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {
+        val removedRequestId = removeActiveRequest(requestId)
+        if (removedRequestId == Constants.EMPTY) {
+            return
+        }
+
         val message = obtainMessage(requestId, data)
         Log.e(Constants.LOG_TAG, "Sending message to client: $message")
-        removeActiveRequester(requestId)?.send(message)
+        lastClientMessenger?.send(message)
     }
 
     override fun sendStatusMessage(
@@ -155,10 +151,13 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
         Log.e(Constants.LOG_TAG, "Sending status message to client: $message")
 
+        var removedRequestId = Constants.EMPTY
         if (isLastMessage) {
-            removeActiveRequester(requestId)?.send(message)
-        } else {
-            activeRequesters[requestId]?.send(message)
+            removedRequestId = removeActiveRequest(requestId)
+        }
+
+        if (!isLastMessage || removedRequestId != Constants.EMPTY) {
+            lastClientMessenger?.send(message)
         }
     }
 
@@ -181,13 +180,17 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         }
     }
 
-    private fun removeActiveRequester(id: Int): Messenger? {
-        val lastRequester = activeRequesters.remove(id)
-        if (activeRequesters.isEmpty() && isForeground) {
+    private fun removeActiveRequest(id: Int): Int {
+        val lastRequest = activeRequests.indexOf(id)
+        if (lastRequest != Constants.EMPTY) {
+            activeRequests.remove(id)
+        }
+
+        if (activeRequests.isEmpty() && isForeground) {
             stopForeground(false)
             isForeground = false
         }
-        return lastRequester
+        return lastRequest
     }
 
     override fun onDestroy() {
