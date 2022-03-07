@@ -105,9 +105,9 @@
             android:id="@+id/updateButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="9dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="9dp"
+            android:layout_marginBottom="8dp"
             android:text="@string/update"
             android:visibility="@{appItemState.updateAvailable ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
@@ -118,8 +118,9 @@
             android:id="@+id/bottomBarrier"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="updateSizeText,updateButton,showInfoButton,appIcon,appNameText" />
+            app:barrierDirection="top"
+            app:constraint_referenced_ids="updateInfoText"
+            tools:layout_editor_absoluteY="66dp" />
 
         <TextView
             android:id="@+id/updateInfoText"
