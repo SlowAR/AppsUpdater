@@ -163,11 +163,6 @@ class UpdaterServiceManagerImpl @Inject constructor(
 
         fun sendMessage(requestId: Int, data: Bundle?)
 
-        fun sendStatusMessage(
-            requestId: Int,
-            statusId: Int,
-            data: Bundle?,
-            isLastMessage: Boolean
-        )
+        fun sendStatusMessage(requestId: Int, statusId: Int, data: Bundle?, isLastMessage: Boolean)
     }
 }

@@ -38,11 +38,6 @@ class UpdatesListViewModel(
     private var checkForUpdatesDisposable: Disposable? = null
     private var appUpdateDisposable: Disposable? = null
 
-    fun checkUpdatesStatus() {
-        checkForUpdates()
-        updateAppsQueue(true)
-    }
-
     fun checkForUpdates(forceRefresh: Boolean = false) {
         checkForUpdatesDisposable?.let { disposable ->
             if (forceRefresh) {

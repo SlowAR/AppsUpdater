@@ -131,6 +131,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     private fun handleUpdateAppStatus(data: Bundle) {
         data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)
             ?.let { states ->
+                Log.e(Constants.LOG_TAG, "handleUpdateAppStatus(): Receiving status message from service: $states")
                 when (states) {
                     is AppUpdateItemStateDto.CompletedResult -> {
                         updateAppStatusSource.onNext(states)
