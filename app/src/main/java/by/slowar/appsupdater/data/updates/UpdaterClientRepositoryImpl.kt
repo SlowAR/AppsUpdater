@@ -27,7 +27,7 @@ class UpdaterClientRepositoryImpl @Inject constructor(
         return updaterServiceDataSource.updateApps(packages)
     }
 
-    override fun cancelUpdate(packageName: String) {
-        updaterServiceDataSource.cancelUpdate(packageName)
+    override fun cancelUpdate(packageName: String): Observable<Boolean> {
+        return updaterServiceDataSource.cancelUpdate(packageName)
     }
 }

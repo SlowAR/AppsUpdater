@@ -17,6 +17,7 @@ import by.slowar.appsupdater.domain.updates.AppUpdateItem
 import by.slowar.appsupdater.domain.updates.CheckForUpdatesUseCaseImpl
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -38,6 +39,7 @@ class UpdatesListViewModel(
 
     private var checkForUpdatesDisposable: Disposable? = null
     private var appUpdateDisposable: Disposable? = null
+    private var cancelUpdateDisposable = CompositeDisposable()
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
         checkForUpdatesDisposable?.let { disposable ->
@@ -85,7 +87,20 @@ class UpdatesListViewModel(
     }
 
     private fun cancelUpdateApp(packageName: String) {
-        updaterRepository.cancelUpdate(packageName)
+        val disposable = updaterRepository.cancelUpdate(packageName)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { isCurrentlyUpdating ->
+                if (!isCurrentlyUpdating) {
+                    val newUiState = updateAppsMetadata.first { state ->
+                        state.packageName == packageName
+                    }.toIdleUiState {
+                        updateApp(packageName)
+                    }
+                    _updatingAppState.value = newUiState
+                }
+            }
+        cancelUpdateDisposable.add(disposable)
     }
 
     private fun updateAppsQueue(echo: Boolean = false) {
@@ -177,14 +192,14 @@ class UpdatesListViewModel(
             is AppUpdateItemStateDto.ErrorResult -> {
                 handleError(appUpdateState.error)
                 updatingAppPreviousState.toIdleUiState {
-                    updateApp(updatingAppPreviousState.packageName)
+                    updateApp(appUpdateState.packageName)
                 }
             }
             is AppUpdateItemStateDto.CancelledResult -> {
                 updateAppsMetadata.first { state ->
                     state.packageName == appUpdateState.packageName
                 }.toIdleUiState {
-                    updateApp(updatingAppPreviousState.packageName)
+                    updateApp(appUpdateState.packageName)
                 }
             }
             else -> {
@@ -216,6 +231,7 @@ class UpdatesListViewModel(
         super.onCleared()
         checkForUpdatesDisposable?.dispose()
         appUpdateDisposable?.dispose()
+        cancelUpdateDisposable.dispose()
     }
 
     class Factory @Inject constructor(

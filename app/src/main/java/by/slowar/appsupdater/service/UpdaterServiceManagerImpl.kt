@@ -96,10 +96,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
         updateAppDisposable = Observable.concat(updateObservables)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { updateState ->
-                    handleUpdateAppStatus(updateState)
-                },
+            .subscribe(::handleUpdateAppStatus,
                 { error ->
                     Log.e(Constants.LOG_TAG, "updateApp: ${error.localizedMessage}")
                     finishUpdate()
@@ -108,23 +105,6 @@ class UpdaterServiceManagerImpl @Inject constructor(
                     finishUpdate()
                 }
             )
-    }
-
-    override fun cancelUpdate(packageName: String) {
-        val disposable = repository.cancelUpdate(packageName)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { hostListener?.cancelNotification() },
-                { error ->
-                    hostListener?.cancelNotification()
-                    Log.e(
-                        Constants.LOG_TAG,
-                        error.message ?: "Unknown error occurred while cancelling an update!"
-                    )
-                }
-            )
-        cancelUpdateDisposable.add(disposable)
     }
 
     private fun handleUpdateAppStatus(updateState: AppUpdateItemStateDto) {
@@ -160,6 +140,30 @@ class UpdaterServiceManagerImpl @Inject constructor(
             statusData,
             isLastMessage
         )
+    }
+
+    override fun cancelUpdate(packageName: String) {
+        val disposable = repository.cancelUpdate(packageName)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                ::handleCancelUpdate
+            ) { error ->
+                hostListener?.cancelNotification()
+                Log.e(
+                    Constants.LOG_TAG,
+                    error.message ?: "Unknown error occurred while cancelling an update!"
+                )
+            }
+        cancelUpdateDisposable.add(disposable)
+    }
+
+    private fun handleCancelUpdate(isCurrentlyUpdating: Boolean) {
+        val data = Bundle().apply {
+            putBoolean(UpdaterService.CANCEL_UPDATE_STATUS_DATA, isCurrentlyUpdating)
+        }
+        hostListener?.sendMessage(UpdaterService.CANCEL_UPDATE, data)
+        hostListener?.cancelNotification()
     }
 
     private fun finishUpdate() {

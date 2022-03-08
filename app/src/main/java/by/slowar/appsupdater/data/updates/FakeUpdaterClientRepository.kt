@@ -102,11 +102,7 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterClientRepositor
         }
     }
 
-    override fun cancelUpdate(packageName: String) {
-        val isCancellingUpdatingApp =
-            appsForUpdateList.firstOrNull { it.appPackage == packageName } != null
-        if (packageName.isNotBlank() && isCancellingUpdatingApp) {
-            canceledUpdates.add(packageName)
-        }
+    override fun cancelUpdate(packageName: String): Observable<Boolean> {
+        TODO("not implemented")
     }
 }

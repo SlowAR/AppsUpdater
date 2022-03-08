@@ -27,6 +27,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
     private val noDescriptionText = "The developer did not provide information"
 
     private var cachedAppsForUpdate = mutableListOf<AppUpdateDto>()
+    private var currentlyUpdatingApp: String = ""
 
     private val canceledUpdates = mutableSetOf<String>()
     private val cancelUpdatesLock = ReentrantLock()
@@ -74,50 +75,73 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
                 emitter.onComplete()
             }
         } else {
-            Observable.create { emitter ->
-                if (checkForCancellation(packageName, emitter)) {
-                    return@create
-                }
-                emitter.onNext(AppUpdateItemStateDto.Initializing(packageName))
-                TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
+            Observable.create { emitter -> emulateAppUpdate(emitter, packageName, app) }
+        }
+    }
 
-                var downloadedBytes = 0L
-                while (downloadedBytes < app.updateSize) {
-                    if (checkForCancellation(packageName, emitter)) {
-                        return@create
-                    }
-                    TimeUnit.SECONDS.sleep(1)
+    private fun emulateAppUpdate(
+        emitter: ObservableEmitter<AppUpdateItemStateDto>,
+        packageName: String,
+        app: AppUpdateDto
+    ) {
+        currentlyUpdatingApp = packageName
+        if (checkForCancellation(packageName, emitter)) {
+            completeAppUpdate(emitter, app, true)
+            return
+        }
+        emitter.onNext(AppUpdateItemStateDto.Initializing(packageName))
+        TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
-                    val downloadSpeedBytes =
-                        Random.nextLong(500 * 1024, 3 * 1024 * 1024)   //500 Kb/s - 3 Mb/s
-                    downloadedBytes += downloadSpeedBytes.also {
-                        it.coerceIn(0..app.updateSize)
-                    }
-
-                    emitter.onNext(
-                        AppUpdateItemStateDto.Downloading(
-                            app.appPackage,
-                            downloadedBytes,
-                            app.updateSize,
-                            downloadSpeedBytes
-                        )
-                    )
-                }
-
-                if (checkForCancellation(packageName, emitter)) {
-                    return@create
-                }
-                emitter.onNext(AppUpdateItemStateDto.Installing(app.appPackage))
-                val installSpeed = 10 * 1024    //20 Kb per 1 Ms
-                TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
-
-                if (checkForCancellation(packageName, emitter)) {
-                    return@create
-                }
-                emitter.onNext(AppUpdateItemStateDto.CompletedResult(app.appPackage))
-                emitter.onComplete()
-                cachedAppsForUpdate.remove(app)
+        var downloadedBytes = 0L
+        while (downloadedBytes < app.updateSize) {
+            if (checkForCancellation(packageName, emitter)) {
+                completeAppUpdate(emitter, app, true)
+                return
             }
+            TimeUnit.SECONDS.sleep(1)
+
+            val downloadSpeedBytes =
+                Random.nextLong(500 * 1024, 3 * 1024 * 1024)   //500 Kb/s - 3 Mb/s
+            downloadedBytes += downloadSpeedBytes.also {
+                it.coerceIn(0..app.updateSize)
+            }
+
+            emitter.onNext(
+                AppUpdateItemStateDto.Downloading(
+                    app.appPackage,
+                    downloadedBytes,
+                    app.updateSize,
+                    downloadSpeedBytes
+                )
+            )
+        }
+
+        if (checkForCancellation(packageName, emitter)) {
+            completeAppUpdate(emitter, app, true)
+            return
+        }
+        emitter.onNext(AppUpdateItemStateDto.Installing(app.appPackage))
+        val installSpeed = 10 * 1024    //20 Kb per 1 Ms
+        TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
+
+        if (checkForCancellation(packageName, emitter)) {
+            completeAppUpdate(emitter, app, true)
+            return
+        }
+        emitter.onNext(AppUpdateItemStateDto.CompletedResult(app.appPackage))
+
+        completeAppUpdate(emitter, app)
+    }
+
+    private fun completeAppUpdate(
+        emitter: ObservableEmitter<AppUpdateItemStateDto>,
+        app: AppUpdateDto,
+        isCancelled: Boolean = false
+    ) {
+        emitter.onComplete()
+        currentlyUpdatingApp = ""
+        if (!isCancelled) {
+            cachedAppsForUpdate.remove(app)
         }
     }
 
@@ -134,7 +158,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
         }
     }
 
-    override fun cancelUpdate(packageName: String): Single<Unit> {
+    override fun cancelUpdate(packageName: String): Single<Boolean> {
         return Single.create { emitter ->
             val hasAppUpdate =
                 cachedAppsForUpdate.firstOrNull { it.appPackage == packageName } != null
@@ -147,7 +171,7 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
                 }
                 else -> {
                     addAppForCancellation(packageName)
-                    emitter.onSuccess(Unit)
+                    emitter.onSuccess(packageName == currentlyUpdatingApp)
                 }
             }
         }

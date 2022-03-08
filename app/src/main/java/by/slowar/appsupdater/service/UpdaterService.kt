@@ -30,7 +30,8 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         const val CHECK_ALL_FOR_UPDATES_DATA = "CheckAllForUpdatesData"
         const val UPDATE_APP_DATA = "UpdateAppData"
         const val UPDATE_APP_STATUS_DATA = "UpdateAppStatusData"
-        const val CANCEL_APP_DATA = "CancelAppData"
+        const val CANCEL_UPDATE_DATA = "CancelAppData"
+        const val CANCEL_UPDATE_STATUS_DATA = "CancelAppData"
         const val LAST_UPDATE_APP = "LastUpdateApp"
     }
 
@@ -104,7 +105,7 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     private fun cancelUpdate(data: Bundle) {
-        val packageName = data.getString(CANCEL_APP_DATA, "")
+        val packageName = data.getString(CANCEL_UPDATE_DATA, "")
         serviceManager.cancelUpdate(packageName)
     }
 

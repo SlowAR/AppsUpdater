@@ -11,5 +11,5 @@ interface UpdaterClientRepository {
 
     fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
 
-    fun cancelUpdate(packageName: String)
+    fun cancelUpdate(packageName: String): Observable<Boolean>
 }

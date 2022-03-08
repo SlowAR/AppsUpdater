@@ -12,6 +12,7 @@ import by.slowar.appsupdater.service.UpdaterService
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.SingleSubject
 import javax.inject.Inject
 
@@ -23,7 +24,7 @@ interface UpdaterServiceDataSource {
 
     fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
 
-    fun cancelUpdate(packageName: String)
+    fun cancelUpdate(packageName: String): Observable<Boolean>
 }
 
 class UpdaterServiceDataSourceImpl @Inject constructor(
@@ -34,12 +35,14 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     private val checkForUpdatesSource: SingleSubject<List<AppUpdateDto>> = SingleSubject.create()
     private var updateAppStatusSource: BehaviorSubject<AppUpdateItemStateDto> =
         BehaviorSubject.create()
+    private var cancelUpdateSource: PublishSubject<Boolean> = PublishSubject.create()
 
     private val clientHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 UpdaterService.CHECK_ALL_FOR_UPDATES -> handleAppsForUpdatesResult(msg.data)
                 UpdaterService.UPDATE_APP_STATUS -> handleUpdateAppStatus(msg.data)
+                UpdaterService.CANCEL_UPDATE -> handleCancelUpdate(msg.data)
                 else -> super.handleMessage(msg)
             }
         }
@@ -121,11 +124,13 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         return updateAppStatusSource
     }
 
-    override fun cancelUpdate(packageName: String) {
+    override fun cancelUpdate(packageName: String): Observable<Boolean> {
+        cancelUpdateSource = PublishSubject.create()
         val data = Bundle().apply {
-            putString(UpdaterService.CANCEL_APP_DATA, packageName)
+            putString(UpdaterService.CANCEL_UPDATE_DATA, packageName)
         }
-        sendMessage(UpdaterService.CANCEL_UPDATE, data, false)
+        sendMessage(UpdaterService.CANCEL_UPDATE, data, true)
+        return cancelUpdateSource
     }
 
     private fun handleAppsForUpdatesResult(data: Bundle) {
@@ -145,7 +150,8 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
                     "handleUpdateAppStatus(): Receiving status message from service: $states"
                 )
                 when (states) {
-                    is AppUpdateItemStateDto.CompletedResult -> {
+                    is AppUpdateItemStateDto.CompletedResult,
+                    is AppUpdateItemStateDto.CancelledResult -> {
                         updateAppStatusSource.onNext(states)
                         val isLastApp = data.getBoolean(UpdaterService.LAST_UPDATE_APP, false)
                         if (isLastApp) {
@@ -156,6 +162,12 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
                     else -> updateAppStatusSource.onNext(states)
                 }
             }
+    }
+
+    private fun handleCancelUpdate(data: Bundle) {
+        data.getBoolean(UpdaterService.CANCEL_UPDATE_STATUS_DATA).let { isCurrentlyUpdating ->
+            cancelUpdateSource.onNext(isCurrentlyUpdating)
+        }
     }
 
     private fun sendMessage(requestId: Int, data: Bundle? = null, needToReply: Boolean = false) {
