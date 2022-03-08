@@ -21,7 +21,7 @@ fun AppUpdate.toModel(metadata: InstalledApp): AppUpdateItem =
         updateSize = this.updateSize,
     )
 
-fun AppUpdateItem.toUiState(action: () -> Unit): AppItemUiState =
+fun AppUpdateItem.toUiState(cancelAction: () -> Unit, updateAction: () -> Unit): AppItemUiState =
     AppItemUiState.Idle(
         appName = this.appName,
         packageName = this.packageName,
@@ -29,5 +29,6 @@ fun AppUpdateItem.toUiState(action: () -> Unit): AppItemUiState =
         updateSize = this.updateSize,
         icon = this.icon,
         descriptionVisible = false,
-        action
+        cancelAction,
+        updateAction
     )

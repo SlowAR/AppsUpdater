@@ -17,6 +17,14 @@
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true">
 
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/actionsBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="start"
+            app:constraint_referenced_ids="cancelButton,updateButton"
+            tools:layout_editor_absoluteX="411dp" />
+
         <ImageView
             android:id="@+id/appIcon"
             android:layout_width="@dimen/app_icon_size"
@@ -97,7 +105,7 @@
             android:contentDescription="@string/show_update_info"
             android:rotation="@{appItemState.descriptionVisible ? 180 : 0}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
-            app:layout_constraintEnd_toStartOf="@+id/updateButton"
+            app:layout_constraintEnd_toStartOf="@+id/actionsBarrier"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_baseline_keyboard_arrow_down_24" />
 
@@ -110,6 +118,19 @@
             android:layout_marginBottom="8dp"
             android:text="@string/update"
             android:visibility="@{appItemState.updateAvailable ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/cancelButton"
+            android:layout_width="@dimen/app_icon_size"
+            android:layout_height="@dimen/app_icon_size"
+            android:layout_marginEnd="8dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_baseline_check_24"
+            android:visibility="@{appItemState.cancelUpdateAvailable ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

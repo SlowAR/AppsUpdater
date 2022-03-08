@@ -14,6 +14,7 @@ import kotlin.random.Random
 class FakeUpdaterClientRepository @Inject constructor() : UpdaterClientRepository {
 
     private val appsForUpdateList = mutableListOf<AppUpdate>()
+    private val canceledUpdates = mutableSetOf<String>()
 
     init {
         appsForUpdateList.apply {
@@ -45,11 +46,17 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterClientRepositor
         packageName: String,
         appSize: Long
     ) {
+        if (checkForCancellation(packageName, emitter)) {
+            return
+        }
         emitter.onNext(AppUpdateItemStateDto.Initializing(packageName))
         TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
         var downloadedBytes = 0L
         while (downloadedBytes < appSize) {
+            if (checkForCancellation(packageName, emitter)) {
+                return
+            }
             TimeUnit.SECONDS.sleep(1)
 
             val downloadSpeedBytes =
@@ -68,11 +75,38 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterClientRepositor
             )
         }
 
+        if (checkForCancellation(packageName, emitter)) {
+            return
+        }
         emitter.onNext(AppUpdateItemStateDto.Installing(packageName))
         val installSpeed = 10 * 1024    //10 Kb per 1 Ms
         TimeUnit.MILLISECONDS.sleep(appSize / installSpeed)
 
+        if (checkForCancellation(packageName, emitter)) {
+            return
+        }
         emitter.onNext(AppUpdateItemStateDto.CompletedResult(packageName))
         emitter.onComplete()
+    }
+
+    private fun checkForCancellation(
+        currentPackage: String,
+        emitter: ObservableEmitter<AppUpdateItemStateDto>
+    ): Boolean {
+        return if (canceledUpdates.contains(currentPackage)) {
+            emitter.onNext(AppUpdateItemStateDto.CancelledResult(currentPackage))
+            canceledUpdates.remove(currentPackage)
+            true
+        } else {
+            false
+        }
+    }
+
+    override fun cancelUpdate(packageName: String) {
+        val isCancellingUpdatingApp =
+            appsForUpdateList.firstOrNull { it.appPackage == packageName } != null
+        if (packageName.isNotBlank() && isCancellingUpdatingApp) {
+            canceledUpdates.add(packageName)
+        }
     }
 }

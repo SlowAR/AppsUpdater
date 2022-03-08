@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
@@ -169,15 +170,17 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
                     animateHideProgress(binding.downloadProgressBar, binding.appIcon)
                 }
             } else {
-                binding.taskProgressBar.visibility = isVisible(uiState.taskProgressVisible)
-                binding.downloadProgressBar.visibility =
-                    isVisible(uiState.downloadProgressVisible)
+                binding.taskProgressBar.isVisible = uiState.taskProgressVisible
+                binding.downloadProgressBar.isVisible = uiState.downloadProgressVisible
             }
 
-            binding.updateButton.visibility = isVisible(uiState.updateAvailable)
-        }
+            binding.updateButton.isVisible = uiState.updateAvailable
+            binding.cancelButton.isVisible = uiState.cancelUpdateAvailable
 
-        private fun isVisible(isVisible: Boolean) = if (isVisible) View.VISIBLE else View.GONE
+            if (uiState.cancelUpdateAvailable) {
+                binding.cancelButton.setOnClickListener { uiState.onCancelAction() }
+            }
+        }
 
         private fun toggleDescriptionVisibility() {
             if (binding.updateInfoText.visibility == View.VISIBLE) {

@@ -3,8 +3,10 @@ package by.slowar.appsupdater.data.updaterservice
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 import io.reactivex.Single
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -25,6 +27,9 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
     private val noDescriptionText = "The developer did not provide information"
 
     private var cachedAppsForUpdate = mutableListOf<AppUpdateDto>()
+
+    private val canceledUpdates = mutableSetOf<String>()
+    private val cancelUpdatesLock = ReentrantLock()
 
     override fun checkForUpdates(packages: List<String>): Single<List<AppUpdateDto>> {
         return if (cachedAppsForUpdate.isEmpty()) {
@@ -70,11 +75,17 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
             }
         } else {
             Observable.create { emitter ->
+                if (checkForCancellation(packageName, emitter)) {
+                    return@create
+                }
                 emitter.onNext(AppUpdateItemStateDto.Initializing(packageName))
                 TimeUnit.MILLISECONDS.sleep(Random.nextLong(100, 500))
 
                 var downloadedBytes = 0L
                 while (downloadedBytes < app.updateSize) {
+                    if (checkForCancellation(packageName, emitter)) {
+                        return@create
+                    }
                     TimeUnit.SECONDS.sleep(1)
 
                     val downloadSpeedBytes =
@@ -93,14 +104,63 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
                     )
                 }
 
+                if (checkForCancellation(packageName, emitter)) {
+                    return@create
+                }
                 emitter.onNext(AppUpdateItemStateDto.Installing(app.appPackage))
                 val installSpeed = 10 * 1024    //20 Kb per 1 Ms
                 TimeUnit.MILLISECONDS.sleep(app.updateSize / installSpeed)
 
+                if (checkForCancellation(packageName, emitter)) {
+                    return@create
+                }
                 emitter.onNext(AppUpdateItemStateDto.CompletedResult(app.appPackage))
                 emitter.onComplete()
                 cachedAppsForUpdate.remove(app)
             }
         }
+    }
+
+    private fun checkForCancellation(
+        currentPackage: String,
+        emitter: ObservableEmitter<AppUpdateItemStateDto>
+    ): Boolean {
+        return if (removeCancelledApp(currentPackage)) {
+            emitter.onNext(AppUpdateItemStateDto.CancelledResult(currentPackage))
+            emitter.onComplete()
+            true
+        } else {
+            false
+        }
+    }
+
+    override fun cancelUpdate(packageName: String): Single<Unit> {
+        return Single.create { emitter ->
+            val hasAppUpdate =
+                cachedAppsForUpdate.firstOrNull { it.appPackage == packageName } != null
+            when {
+                packageName.isBlank() -> {
+                    emitter.onError(IllegalArgumentException("Package name is blank!"))
+                }
+                !hasAppUpdate -> {
+                    emitter.onError(IllegalStateException("Cancellation error! There is no update for this app ($packageName)"))
+                }
+                else -> {
+                    addAppForCancellation(packageName)
+                    emitter.onSuccess(Unit)
+                }
+            }
+        }
+    }
+
+    private fun addAppForCancellation(packageName: String) {
+        cancelUpdatesLock.lock()
+        canceledUpdates.add(packageName)
+        cancelUpdatesLock.unlock()
+    }
+
+    private fun removeCancelledApp(packageName: String): Boolean {
+        cancelUpdatesLock.lock()
+        return canceledUpdates.remove(packageName).also { cancelUpdatesLock.unlock() }
     }
 }

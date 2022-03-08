@@ -11,7 +11,19 @@ fun AppUpdateItemStateDto.toUiState(metadata: AppItemUiState) =
         is AppUpdateItemStateDto.Installing -> this.toUiState(metadata)
         is AppUpdateItemStateDto.CompletedResult -> this.toUiState(metadata)
         is AppUpdateItemStateDto.ErrorResult -> this.toUiState(metadata)
+        is AppUpdateItemStateDto.CancelledResult -> throw IllegalStateException("Need to be caught earlier!")
     }
+
+fun AppItemUiState.toIdleUiState(onUpdateAction: () -> Unit) = AppItemUiState.Idle(
+    this.appName,
+    this.packageName,
+    this.description,
+    this.updateSize,
+    this.icon,
+    this.descriptionVisible,
+    this.onCancelAction,
+    onUpdateAction
+)
 
 fun AppItemUiState.toPendingUiState() = AppItemUiState.Pending(
     this.appName,
@@ -19,7 +31,8 @@ fun AppItemUiState.toPendingUiState() = AppItemUiState.Pending(
     this.description,
     this.updateSize,
     this.icon,
-    this.descriptionVisible
+    this.descriptionVisible,
+    this.onCancelAction
 )
 
 fun AppUpdateItemStateDto.Pending.toUiState(metadata: AppItemUiState) =
@@ -29,7 +42,8 @@ fun AppUpdateItemStateDto.Pending.toUiState(metadata: AppItemUiState) =
         metadata.description,
         metadata.updateSize,
         metadata.icon,
-        metadata.descriptionVisible
+        metadata.descriptionVisible,
+        metadata.onCancelAction
     )
 
 fun AppUpdateItemStateDto.Initializing.toUiState(metadata: AppItemUiState) =
@@ -39,7 +53,8 @@ fun AppUpdateItemStateDto.Initializing.toUiState(metadata: AppItemUiState) =
         metadata.description,
         metadata.updateSize,
         metadata.icon,
-        metadata.descriptionVisible
+        metadata.descriptionVisible,
+        metadata.onCancelAction
     )
 
 fun AppUpdateItemStateDto.Downloading.toUiState(metadata: AppItemUiState) =
@@ -50,6 +65,7 @@ fun AppUpdateItemStateDto.Downloading.toUiState(metadata: AppItemUiState) =
         metadata.updateSize,
         metadata.icon,
         metadata.descriptionVisible,
+        metadata.onCancelAction,
         downloadedBytes,
         downloadSpeedBytes
     )
@@ -62,6 +78,7 @@ fun AppUpdateItemStateDto.Installing.toUiState(metadata: AppItemUiState) =
         metadata.updateSize,
         metadata.icon,
         metadata.descriptionVisible,
+        metadata.onCancelAction
     )
 
 fun AppUpdateItemStateDto.CompletedResult.toUiState(metadata: AppItemUiState) =
@@ -72,6 +89,7 @@ fun AppUpdateItemStateDto.CompletedResult.toUiState(metadata: AppItemUiState) =
         metadata.updateSize,
         metadata.icon,
         metadata.descriptionVisible,
+        metadata.onCancelAction
     )
 
 fun AppUpdateItemStateDto.ErrorResult.toUiState(metadata: AppItemUiState) =
@@ -82,5 +100,6 @@ fun AppUpdateItemStateDto.ErrorResult.toUiState(metadata: AppItemUiState) =
         metadata.updateSize,
         metadata.icon,
         metadata.descriptionVisible,
+        metadata.onCancelAction,
         error
     )

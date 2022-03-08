@@ -22,6 +22,8 @@ interface UpdaterServiceDataSource {
     fun checkAllAppsForUpdates(packages: ArrayList<String>): Single<List<AppUpdateDto>>
 
     fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
+
+    fun cancelUpdate(packageName: String)
 }
 
 class UpdaterServiceDataSourceImpl @Inject constructor(
@@ -119,6 +121,13 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         return updateAppStatusSource
     }
 
+    override fun cancelUpdate(packageName: String) {
+        val data = Bundle().apply {
+            putString(UpdaterService.CANCEL_APP_DATA, packageName)
+        }
+        sendMessage(UpdaterService.CANCEL_UPDATE, data, false)
+    }
+
     private fun handleAppsForUpdatesResult(data: Bundle) {
         Log.e(Constants.LOG_TAG, "Received apps for update from service")
         data.getParcelableArrayList<AppUpdateDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
@@ -131,7 +140,10 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     private fun handleUpdateAppStatus(data: Bundle) {
         data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)
             ?.let { states ->
-                Log.e(Constants.LOG_TAG, "handleUpdateAppStatus(): Receiving status message from service: $states")
+                Log.e(
+                    Constants.LOG_TAG,
+                    "handleUpdateAppStatus(): Receiving status message from service: $states"
+                )
                 when (states) {
                     is AppUpdateItemStateDto.CompletedResult -> {
                         updateAppStatusSource.onNext(states)

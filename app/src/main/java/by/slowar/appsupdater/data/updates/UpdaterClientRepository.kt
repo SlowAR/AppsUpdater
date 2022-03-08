@@ -10,4 +10,6 @@ interface UpdaterClientRepository {
     fun checkForUpdates(packages: ArrayList<String>): Single<List<AppUpdate>>
 
     fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
+
+    fun cancelUpdate(packageName: String)
 }

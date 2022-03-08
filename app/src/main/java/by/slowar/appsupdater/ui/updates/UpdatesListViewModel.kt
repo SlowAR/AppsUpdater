@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.updates.UpdaterClientRepository
+import by.slowar.appsupdater.data.updates.mappers.toIdleUiState
 import by.slowar.appsupdater.data.updates.mappers.toPendingUiState
 import by.slowar.appsupdater.data.updates.mappers.toUiState
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
@@ -68,9 +69,10 @@ class UpdatesListViewModel(
             _updateResult.value = AppUpdateResult.EmptyResult
         } else {
             updateAppsMetadata = updatesList.map { item ->
-                item.toUiState {
-                    updateApp(item.packageName)
-                }
+                item.toUiState(
+                    { cancelUpdateApp(item.packageName) },
+                    { updateApp(item.packageName) }
+                )
             }.toMutableList()
             _updateResult.value = AppUpdateResult.SuccessResult(updateAppsMetadata)
         }
@@ -82,8 +84,15 @@ class UpdatesListViewModel(
         updateAppsQueue()
     }
 
+    private fun cancelUpdateApp(packageName: String) {
+        updaterRepository.cancelUpdate(packageName)
+    }
+
     private fun updateAppsQueue(echo: Boolean = false) {
-        Log.e(Constants.LOG_TAG, "updateAppsQueue(): echo $echo, disposable $appUpdateDisposable, list: ${appsForUpdateQueue.size}")
+        Log.e(
+            Constants.LOG_TAG,
+            "updateAppsQueue(): echo $echo, disposable $appUpdateDisposable, list: ${appsForUpdateQueue.size}"
+        )
         if (appUpdateDisposable != null) {
             return
         }
@@ -164,25 +173,28 @@ class UpdatesListViewModel(
             }
         }
 
-        val newAppUiState = if (appUpdateState is AppUpdateItemStateDto.ErrorResult) {
-            handleError(appUpdateState.error)
-            AppItemUiState.Idle(
-                updatingAppPreviousState.appName,
-                updatingAppPreviousState.packageName,
-                updatingAppPreviousState.description,
-                updatingAppPreviousState.updateSize,
-                updatingAppPreviousState.icon,
-                false
-            ) { updateApp(updatingAppPreviousState.packageName) }
-        } else {
-            appUpdateState.toUiState(updatingAppPreviousState)
+        val newAppUiState = when (appUpdateState) {
+            is AppUpdateItemStateDto.ErrorResult -> {
+                handleError(appUpdateState.error)
+                updatingAppPreviousState.toIdleUiState {
+                    updateApp(updatingAppPreviousState.packageName)
+                }
+            }
+            is AppUpdateItemStateDto.CancelledResult -> {
+                updateAppsMetadata.first { state ->
+                    state.packageName == appUpdateState.packageName
+                }.toIdleUiState {
+                    updateApp(updatingAppPreviousState.packageName)
+                }
+            }
+            else -> {
+                appUpdateState.toUiState(updatingAppPreviousState)
+            }
         }
 
         _updatingAppState.value = newAppUiState
 
-        if (appUpdateState is AppUpdateItemStateDto.ErrorResult ||
-            appUpdateState is AppUpdateItemStateDto.CompletedResult
-        ) {
+        if (appUpdateState.isFinished()) {
             updatingAppPreviousState = AppItemUiState.Empty
         }
     }

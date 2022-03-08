@@ -22,12 +22,15 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
         const val CHECK_ALL_FOR_UPDATES = 1000
         const val UPDATE_APP = 1001
+        const val CANCEL_UPDATE = 1002
+        const val CANCEL_ALL_UPDATES = 1003
 
         const val UPDATE_APP_STATUS = 2000
 
         const val CHECK_ALL_FOR_UPDATES_DATA = "CheckAllForUpdatesData"
         const val UPDATE_APP_DATA = "UpdateAppData"
         const val UPDATE_APP_STATUS_DATA = "UpdateAppStatusData"
+        const val CANCEL_APP_DATA = "CancelAppData"
         const val LAST_UPDATE_APP = "LastUpdateApp"
     }
 
@@ -36,12 +39,16 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            lastClientMessenger = msg.replyTo
+            if (msg.replyTo != null) {
+                lastClientMessenger = msg.replyTo
+            }
             activeRequests.add(msg.what)
 
             when (msg.what) {
                 CHECK_ALL_FOR_UPDATES -> checkAllForUpdates(msg.data)
                 UPDATE_APP -> installUpdate(msg.data)
+                CANCEL_UPDATE -> cancelUpdate(msg.data)
+                CANCEL_ALL_UPDATES -> cancelAllUpdates()
                 else -> {
                     removeActiveRequest(msg.what)
                     super.handleMessage(msg)
@@ -96,6 +103,14 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         }
     }
 
+    private fun cancelUpdate(data: Bundle) {
+        val packageName = data.getString(CANCEL_APP_DATA, "")
+        serviceManager.cancelUpdate(packageName)
+    }
+
+    private fun cancelAllUpdates() {
+    }
+
     override fun showAppsForUpdateInfo(appsForUpdateAmount: Int) {
         val notificationBuilder =
             getCheckAllForUpdatesNotificationBuilder(this, appsForUpdateAmount)
@@ -128,6 +143,10 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     override fun showCompletedUpdateAppInfo(appName: String) {
         val notificationBuilder = getUpdateAppCompletedNotificationBuilder(this, appName)
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
+    }
+
+    override fun cancelNotification() {
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {

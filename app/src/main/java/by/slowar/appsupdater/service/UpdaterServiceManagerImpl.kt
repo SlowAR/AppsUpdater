@@ -11,6 +11,7 @@ import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.scopes.ServiceScope
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -22,6 +23,8 @@ interface UpdaterServiceManager {
     fun checkAllForUpdates(packages: List<String>)
 
     fun updateApps(packages: ArrayList<String>)
+
+    fun cancelUpdate(packageName: String)
 
     fun onClear()
 }
@@ -35,6 +38,8 @@ class UpdaterServiceManagerImpl @Inject constructor(
 
     private var checkForUpdatesDisposable: Disposable? = null
     private var updateAppDisposable: Disposable? = null
+    private var cancelUpdateDisposable = CompositeDisposable()
+
     private var lastUpdateAppPackage: String = ""
 
     override fun prepare(listener: Listener) {
@@ -105,6 +110,23 @@ class UpdaterServiceManagerImpl @Inject constructor(
             )
     }
 
+    override fun cancelUpdate(packageName: String) {
+        val disposable = repository.cancelUpdate(packageName)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { hostListener?.cancelNotification() },
+                { error ->
+                    hostListener?.cancelNotification()
+                    Log.e(
+                        Constants.LOG_TAG,
+                        error.message ?: "Unknown error occurred while cancelling an update!"
+                    )
+                }
+            )
+        cancelUpdateDisposable.add(disposable)
+    }
+
     private fun handleUpdateAppStatus(updateState: AppUpdateItemStateDto) {
         when (updateState) {
             is AppUpdateItemStateDto.Downloading -> hostListener?.showUpdateProgressInfo(
@@ -148,6 +170,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
     override fun onClear() {
         checkForUpdatesDisposable?.dispose()
         updateAppDisposable?.dispose()
+        cancelUpdateDisposable.clear()
         hostListener = null
     }
 
@@ -160,6 +183,8 @@ class UpdaterServiceManagerImpl @Inject constructor(
         fun showInstallingUpdateAppInfo(appName: String)
 
         fun showCompletedUpdateAppInfo(appName: String)
+
+        fun cancelNotification()
 
         fun sendMessage(requestId: Int, data: Bundle?)
 
