@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.di.modules
+package by.slowar.appsupdater.di.modules.service
 
 import by.slowar.appsupdater.service.UpdaterServiceManager
 import by.slowar.appsupdater.service.UpdaterServiceManagerImpl

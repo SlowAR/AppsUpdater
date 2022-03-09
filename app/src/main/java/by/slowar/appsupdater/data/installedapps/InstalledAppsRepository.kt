@@ -7,8 +7,8 @@ interface InstalledAppsRepository {
 
     /**
      * Loads list of apps installed on device
-     * forceRefresh if true - loads list of apps and cache it, else returns cached list of apps
-     * return Single of installed apps list
+     * @param forceRefresh if true - loads list of apps and cache it, else returns cached list of apps
+     * @return Single of installed apps list
      */
     fun loadInstalledApps(forceRefresh: Boolean = false): Single<List<InstalledApp>>
 }

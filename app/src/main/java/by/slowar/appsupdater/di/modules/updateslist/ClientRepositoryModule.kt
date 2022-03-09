@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.di.modules
+package by.slowar.appsupdater.di.modules.updateslist
 
 import by.slowar.appsupdater.data.installedapps.InstalledAppsRepository
 import by.slowar.appsupdater.data.installedapps.InstalledAppsRepositoryImpl

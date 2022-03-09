@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.di.modules
+package by.slowar.appsupdater.di.modules.service
 
 import by.slowar.appsupdater.data.updaterservice.FakeUpdaterServiceRepository
 import by.slowar.appsupdater.data.updaterservice.UpdaterServiceRepository

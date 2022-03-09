@@ -1,4 +1,4 @@
-package by.slowar.appsupdater.ui.updates
+package by.slowar.appsupdater.ui.updates.states
 
 enum class UpdatesStatus {
     Empty,

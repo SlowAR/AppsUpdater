@@ -1,6 +1,6 @@
 package by.slowar.appsupdater.di.components
 
-import by.slowar.appsupdater.di.modules.ClientRepositoryModule
+import by.slowar.appsupdater.di.modules.updateslist.ClientRepositoryModule
 import by.slowar.appsupdater.di.modules.DataSourceModule
 import by.slowar.appsupdater.di.modules.UseCaseModule
 import by.slowar.appsupdater.di.scopes.ScreenScope

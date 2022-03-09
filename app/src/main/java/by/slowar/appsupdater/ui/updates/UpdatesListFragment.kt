@@ -13,6 +13,7 @@ import by.slowar.appsupdater.UpdaterApp
 import by.slowar.appsupdater.databinding.FragmentUpdatesListBinding
 import by.slowar.appsupdater.ui.HolderListener
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
+import by.slowar.appsupdater.ui.updates.states.UpdatesStatus
 import javax.inject.Inject
 
 class UpdatesListFragment : Fragment() {
