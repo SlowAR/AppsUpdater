@@ -33,7 +33,10 @@ class UpdatesListViewModel(
     private val _updatingAppState = MutableLiveData<AppItemUiState>()
     val updatingAppState: LiveData<AppItemUiState> = _updatingAppState
 
-    private var updateAppsMetadata: MutableList<AppItemUiState> = mutableListOf()
+    private val _hasUpdatingApps = MutableLiveData<Boolean>()
+    val hasUpdatingApps: LiveData<Boolean> = _hasUpdatingApps
+
+    private var updateAppsMetadata = listOf<AppItemUiState>()
     private var updatingAppPreviousState: AppItemUiState = AppItemUiState.Empty
     private val appsForUpdateQueue = mutableListOf<String>()
 
@@ -42,6 +45,10 @@ class UpdatesListViewModel(
     private var cancelUpdateDisposable = CompositeDisposable()
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
+        if (appUpdateDisposable != null) {
+            return
+        }
+
         checkForUpdatesDisposable?.let { disposable ->
             if (forceRefresh) {
                 disposable.dispose()
@@ -56,8 +63,14 @@ class UpdatesListViewModel(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { updatesList -> handleCheckForUpdates(updatesList) },
-                { error -> handleError(error) }
+                { updatesList ->
+                    handleCheckForUpdates(updatesList)
+                    checkForUpdatesDisposable = null
+                },
+                { error ->
+                    handleError(error)
+                    checkForUpdatesDisposable = null
+                }
             )
     }
 
@@ -83,6 +96,11 @@ class UpdatesListViewModel(
     private fun updateApp(packageName: String) {
         setPendingUiState(packageName)
         appsForUpdateQueue.add(packageName)
+
+        if (appsForUpdateQueue.size == 1) {
+            _hasUpdatingApps.value = true
+        }
+
         updateAppsQueue()
     }
 
@@ -112,6 +130,8 @@ class UpdatesListViewModel(
             return
         }
         if (appsForUpdateQueue.isEmpty() && !echo) {
+            _hasUpdatingApps.value = false
+            checkForUpdates()
             return
         }
 
@@ -127,6 +147,7 @@ class UpdatesListViewModel(
                     finishAppsUpdate()
                 },
                 {
+                    Log.e(Constants.LOG_TAG, "All apps updates completed on client!")
                     finishAppsUpdate()
                 }
             )
@@ -140,6 +161,7 @@ class UpdatesListViewModel(
 
     fun updateAllApps() {
         if (updateAppsMetadata.isNotEmpty() && appUpdateDisposable == null) {
+            _hasUpdatingApps.value = true
             setPendingUiStateAll()
 
             val packagesList = updateAppsMetadata.map { it.packageName } as ArrayList<String>
@@ -162,6 +184,12 @@ class UpdatesListViewModel(
         }
     }
 
+    fun cancelAllUpdates() {
+        appsForUpdateQueue.clear()
+        setIdleUiStateAll()
+        updaterRepository.cancelAllUpdates()
+    }
+
     private fun setPendingUiState(packageName: String) {
         val idleStateAppId = updateAppsMetadata.indexOfFirst { it.packageName == packageName }
         _updatingAppState.value = updateAppsMetadata[idleStateAppId].toPendingUiState()
@@ -170,6 +198,15 @@ class UpdatesListViewModel(
     private fun setPendingUiStateAll() {
         val pendingUiStates = updateAppsMetadata.map { it.toPendingUiState() }
         _updateResult.value = AppUpdateResult.SuccessResult(pendingUiStates)
+    }
+
+    private fun setIdleUiStateAll() {
+        val idleUiStates = updateAppsMetadata.map { pendingState ->
+            pendingState.toIdleUiState {
+                updateApp(pendingState.packageName)
+            }
+        }
+        _updateResult.value = AppUpdateResult.SuccessResult(idleUiStates)
     }
 
     private fun handleUpdateAppState(appUpdateState: AppUpdateItemStateDto) {

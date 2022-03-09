@@ -1,5 +1,7 @@
 package by.slowar.appsupdater.data.updaterservice
 
+import android.util.Log
+import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import io.reactivex.Observable
@@ -29,7 +31,8 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
     private var cachedAppsForUpdate = mutableListOf<AppUpdateDto>()
     private var currentlyUpdatingApp: String = ""
 
-    private val canceledUpdates = mutableSetOf<String>()
+    private val updatingAppsSet = mutableSetOf<String>()
+    private val updatesForCancelSet = mutableSetOf<String>()
     private val cancelUpdatesLock = ReentrantLock()
 
     override fun checkForUpdates(packages: List<String>): Single<List<AppUpdateDto>> {
@@ -62,22 +65,33 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
         }
     }
 
-    override fun updateApp(packageName: String): Observable<AppUpdateItemStateDto> {
-        val app = cachedAppsForUpdate.find { it.appPackage == packageName }
-        return if (app == null) {
-            Observable.create { emitter ->
-                emitter.onNext(
-                    AppUpdateItemStateDto.ErrorResult(
-                        packageName,
-                        IllegalStateException("App doesn't have update")
-                    )
-                )
-                emitter.onComplete()
+    override fun updateApps(packages: List<String>): Observable<AppUpdateItemStateDto> {
+        cancelUpdatesLock.lock()
+        val updateObservables = mutableListOf<Observable<AppUpdateItemStateDto>>()
+        for (packageName in packages) {
+            val app = cachedAppsForUpdate.find { it.appPackage == packageName }
+            val observable = if (app == null) {
+                getErrorObservable(packageName, "App doesn't have update")
+            } else {
+                updatingAppsSet.add(packageName)
+                Observable.create { emitter -> emulateAppUpdate(emitter, packageName, app) }
             }
-        } else {
-            Observable.create { emitter -> emulateAppUpdate(emitter, packageName, app) }
+            updateObservables.add(observable)
         }
+        cancelUpdatesLock.unlock()
+        return Observable.concat(updateObservables)
     }
+
+    private fun getErrorObservable(packageName: String, errorMessage: String) =
+        Observable.create<AppUpdateItemStateDto> { emitter ->
+            emitter.onNext(
+                AppUpdateItemStateDto.ErrorResult(
+                    packageName,
+                    IllegalStateException(errorMessage)
+                )
+            )
+            emitter.onComplete()
+        }
 
     private fun emulateAppUpdate(
         emitter: ObservableEmitter<AppUpdateItemStateDto>,
@@ -140,9 +154,15 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
     ) {
         emitter.onComplete()
         currentlyUpdatingApp = ""
+
+        cancelUpdatesLock.lock()
+        updatingAppsSet.remove(app.appPackage)
         if (!isCancelled) {
             cachedAppsForUpdate.remove(app)
         }
+        cancelUpdatesLock.unlock()
+
+        Log.e(Constants.LOG_TAG, "App update completed on service!")
     }
 
     private fun checkForCancellation(
@@ -160,31 +180,38 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
 
     override fun cancelUpdate(packageName: String): Single<Boolean> {
         return Single.create { emitter ->
-            val hasAppUpdate =
-                cachedAppsForUpdate.firstOrNull { it.appPackage == packageName } != null
+            cancelUpdatesLock.lock()
             when {
                 packageName.isBlank() -> {
                     emitter.onError(IllegalArgumentException("Package name is blank!"))
-                }
-                !hasAppUpdate -> {
-                    emitter.onError(IllegalStateException("Cancellation error! There is no update for this app ($packageName)"))
                 }
                 else -> {
                     addAppForCancellation(packageName)
                     emitter.onSuccess(packageName == currentlyUpdatingApp)
                 }
             }
+            cancelUpdatesLock.unlock()
         }
+    }
+
+    override fun cancelAllUpdates(): Single<Unit> {
+        return Single.just(addAllUpdatesForCancellation())
     }
 
     private fun addAppForCancellation(packageName: String) {
         cancelUpdatesLock.lock()
-        canceledUpdates.add(packageName)
+        updatesForCancelSet.add(packageName)
+        cancelUpdatesLock.unlock()
+    }
+
+    private fun addAllUpdatesForCancellation() {
+        cancelUpdatesLock.lock()
+        updatesForCancelSet.addAll(updatingAppsSet)
         cancelUpdatesLock.unlock()
     }
 
     private fun removeCancelledApp(packageName: String): Boolean {
         cancelUpdatesLock.lock()
-        return canceledUpdates.remove(packageName).also { cancelUpdatesLock.unlock() }
+        return updatesForCancelSet.remove(packageName).also { cancelUpdatesLock.unlock() }
     }
 }

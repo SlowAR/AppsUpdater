@@ -30,4 +30,8 @@ class UpdaterClientRepositoryImpl @Inject constructor(
     override fun cancelUpdate(packageName: String): Observable<Boolean> {
         return updaterServiceDataSource.cancelUpdate(packageName)
     }
+
+    override fun cancelAllUpdates() {
+        updaterServiceDataSource.cancelAllUpdates()
+    }
 }

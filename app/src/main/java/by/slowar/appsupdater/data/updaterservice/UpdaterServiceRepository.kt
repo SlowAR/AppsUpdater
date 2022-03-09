@@ -9,7 +9,9 @@ interface UpdaterServiceRepository {
 
     fun checkForUpdates(packages: List<String>): Single<List<AppUpdateDto>>
 
-    fun updateApp(packageName: String): Observable<AppUpdateItemStateDto>
+    fun updateApps(packages: List<String>): Observable<AppUpdateItemStateDto>
 
     fun cancelUpdate(packageName: String): Single<Boolean>
+
+    fun cancelAllUpdates(): Single<Unit>
 }

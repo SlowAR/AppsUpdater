@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import by.slowar.appsupdater.UpdaterApp
 import by.slowar.appsupdater.databinding.FragmentUpdatesListBinding
+import by.slowar.appsupdater.ui.HolderListener
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import javax.inject.Inject
 
@@ -26,11 +27,16 @@ class UpdatesListFragment : Fragment() {
 
     private lateinit var adapter: UpdateAppListAdapter
 
+    private lateinit var holderListener: HolderListener
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
+
         (requireActivity().applicationContext as UpdaterApp).appComponent
             .getUpdatesListComponent()
             .inject(this)
+
+        holderListener = context as HolderListener
     }
 
     override fun onCreateView(
@@ -59,6 +65,10 @@ class UpdatesListFragment : Fragment() {
             handleUpdateAppState(itemState)
         }
 
+        viewModel.hasUpdatingApps.observe(viewLifecycleOwner) { hasUpdatingApps ->
+            holderListener.onHaveUpdatingApps(hasUpdatingApps)
+        }
+
         viewModel.checkForUpdates()
     }
 
@@ -67,20 +77,25 @@ class UpdatesListFragment : Fragment() {
             is AppUpdateResult.Loading -> {
                 changeLoadingVisibility(true)
                 changeUpdatesStatus(UpdatesStatus.List)
+                holderListener.onUpdatesListRefresh(false)
             }
             AppUpdateResult.EmptyResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.Empty)
+                holderListener.onUpdatesListRefresh(false)
             }
             is AppUpdateResult.ErrorResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.Error)
+                holderListener.onUpdatesListRefresh(false)
                 Toast.makeText(context, state.errorId, Toast.LENGTH_LONG).show()
             }
             is AppUpdateResult.SuccessResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.List)
                 adapter.setNewAppList(state.result)
+                holderListener.onUpdatesListRefresh(true)
+                holderListener.onHaveUpdatingApps(false)
             }
         }
     }
@@ -124,6 +139,10 @@ class UpdatesListFragment : Fragment() {
 
     fun onUpdateAllAppsClick() {
         viewModel.updateAllApps()
+    }
+
+    fun onCancelAllAppsClick() {
+        viewModel.cancelAllUpdates()
     }
 
     override fun onDestroyView() {

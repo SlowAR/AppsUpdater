@@ -103,6 +103,10 @@ class FakeUpdaterClientRepository @Inject constructor() : UpdaterClientRepositor
     }
 
     override fun cancelUpdate(packageName: String): Observable<Boolean> {
-        TODO("not implemented")
+        TODO("Not yet implemented")
+    }
+
+    override fun cancelAllUpdates() {
+        TODO("Not yet implemented")
     }
 }

@@ -9,7 +9,6 @@ import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import by.slowar.appsupdater.di.qualifiers.FakeEntity
 import by.slowar.appsupdater.di.scopes.ServiceScope
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
@@ -25,6 +24,8 @@ interface UpdaterServiceManager {
     fun updateApps(packages: ArrayList<String>)
 
     fun cancelUpdate(packageName: String)
+
+    fun cancelAllUpdates()
 
     fun onClear()
 }
@@ -88,12 +89,7 @@ class UpdaterServiceManagerImpl @Inject constructor(
 
         lastUpdateAppPackage = packages.last()
 
-        val updateObservables = mutableListOf<Observable<AppUpdateItemStateDto>>()
-        for (packageName in packages) {
-            updateObservables.add(repository.updateApp(packageName))
-        }
-
-        updateAppDisposable = Observable.concat(updateObservables)
+        updateAppDisposable = repository.updateApps(packages)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(::handleUpdateAppStatus,
@@ -155,6 +151,15 @@ class UpdaterServiceManagerImpl @Inject constructor(
                     error.message ?: "Unknown error occurred while cancelling an update!"
                 )
             }
+        cancelUpdateDisposable.add(disposable)
+    }
+
+    override fun cancelAllUpdates() {
+        val disposable = repository.cancelAllUpdates()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+
         cancelUpdateDisposable.add(disposable)
     }
 

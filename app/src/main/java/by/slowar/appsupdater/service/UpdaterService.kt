@@ -110,6 +110,8 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     private fun cancelAllUpdates() {
+        serviceManager.cancelAllUpdates()
+        cancelNotification()
     }
 
     override fun showAppsForUpdateInfo(appsForUpdateAmount: Int) {
@@ -147,7 +149,12 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     override fun cancelNotification() {
-        notificationManager.cancel(NOTIFICATION_ID)
+        if (isForeground) {
+            stopForeground(true)
+            isForeground = false
+        } else {
+            notificationManager.cancel(NOTIFICATION_ID)
+        }
     }
 
     override fun sendMessage(requestId: Int, data: Bundle?) {

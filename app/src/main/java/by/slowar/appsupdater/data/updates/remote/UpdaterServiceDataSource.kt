@@ -25,6 +25,8 @@ interface UpdaterServiceDataSource {
     fun updateApps(packages: ArrayList<String>): Observable<AppUpdateItemStateDto>
 
     fun cancelUpdate(packageName: String): Observable<Boolean>
+
+    fun cancelAllUpdates()
 }
 
 class UpdaterServiceDataSourceImpl @Inject constructor(
@@ -131,6 +133,10 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         }
         sendMessage(UpdaterService.CANCEL_UPDATE, data, true)
         return cancelUpdateSource
+    }
+
+    override fun cancelAllUpdates() {
+        sendMessage(UpdaterService.CANCEL_ALL_UPDATES, null, false)
     }
 
     private fun handleAppsForUpdatesResult(data: Bundle) {
