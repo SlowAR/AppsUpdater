@@ -161,28 +161,30 @@ class UpdatesListViewModel(
     }
 
     fun updateAllApps() {
-        if (updateAppsMetadata.isNotEmpty() && appUpdateDisposable == null) {
-            _hasUpdatingApps.value = true
-            setPendingUiStateAll()
-
-            val packagesList = updateAppsMetadata.map { it.packageName } as ArrayList<String>
-
-            appUpdateDisposable = updaterRepository.updateApps(packagesList)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { state ->
-                        handleUpdateAppState(state)
-                    },
-                    { error ->
-                        handleError(error)
-                        finishAppsUpdate()
-                    },
-                    {
-                        finishAppsUpdate()
-                    }
-                )
+        if (updateAppsMetadata.isEmpty() || appUpdateDisposable != null) {
+            return
         }
+
+        _hasUpdatingApps.value = true
+        setPendingUiStateAll()
+
+        val packagesList = updateAppsMetadata.map { it.packageName } as ArrayList<String>
+
+        appUpdateDisposable = updaterRepository.updateApps(packagesList)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { state ->
+                    handleUpdateAppState(state)
+                },
+                { error ->
+                    handleError(error)
+                    finishAppsUpdate()
+                },
+                {
+                    finishAppsUpdate()
+                }
+            )
     }
 
     fun cancelAllUpdates() {

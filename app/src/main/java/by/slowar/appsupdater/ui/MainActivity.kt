@@ -27,8 +27,15 @@ class MainActivity : AppCompatActivity(), HolderListener {
         }
     }
 
-    override fun onUpdatesListRefresh(hasUpdates: Boolean) {
-        binding.updateAllButton.isEnabled = hasUpdates
+    override fun onUpdatesListRefresh(updatesAmount: Int) {
+        binding.updateAllButton.isEnabled = updatesAmount > 0
+        val updatesAmountText = if (updatesAmount > 0) {
+            String.format(getString(R.string.updates_found_amount), updatesAmount)
+        } else {
+            ""
+        }
+        binding.appsUpdatesText.text = updatesAmountText
+
     }
 
     override fun onHaveUpdatingApps(hasUpdatingApps: Boolean) {
@@ -40,7 +47,7 @@ class MainActivity : AppCompatActivity(), HolderListener {
 
 interface HolderListener {
 
-    fun onUpdatesListRefresh(hasUpdates: Boolean)
+    fun onUpdatesListRefresh(updatesAmount: Int = 0)
 
     fun onHaveUpdatingApps(hasUpdatingApps: Boolean)
 }

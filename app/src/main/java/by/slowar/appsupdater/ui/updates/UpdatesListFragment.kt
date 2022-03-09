@@ -80,24 +80,24 @@ class UpdatesListFragment : Fragment() {
             is AppUpdateResult.Loading -> {
                 changeLoadingVisibility(true)
                 changeUpdatesStatus(UpdatesStatus.List)
-                holderListener.onUpdatesListRefresh(false)
+                holderListener.onUpdatesListRefresh()
             }
             AppUpdateResult.EmptyResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.Empty)
-                holderListener.onUpdatesListRefresh(false)
+                holderListener.onUpdatesListRefresh()
             }
             is AppUpdateResult.ErrorResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.Error)
-                holderListener.onUpdatesListRefresh(false)
+                holderListener.onUpdatesListRefresh()
                 Toast.makeText(context, state.errorId, Toast.LENGTH_LONG).show()
             }
             is AppUpdateResult.SuccessResult -> {
                 changeLoadingVisibility(false)
                 changeUpdatesStatus(UpdatesStatus.List)
                 adapter.setNewAppList(state.result)
-                holderListener.onUpdatesListRefresh(true)
+                holderListener.onUpdatesListRefresh(state.result.size)
                 holderListener.onHaveUpdatingApps(false)
             }
         }
