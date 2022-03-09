@@ -74,6 +74,9 @@ class UpdatesListFragment : Fragment() {
 
     private fun handleCheckForUpdatesResult(state: AppUpdateResult) {
         when (state) {
+            is AppUpdateResult.Nothing -> {
+                changeLoadingVisibility(false)
+            }
             is AppUpdateResult.Loading -> {
                 changeLoadingVisibility(true)
                 changeUpdatesStatus(UpdatesStatus.List)

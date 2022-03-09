@@ -46,6 +46,7 @@ class UpdatesListViewModel(
 
     fun checkForUpdates(forceRefresh: Boolean = false) {
         if (appUpdateDisposable != null) {
+            _updateResult.value = AppUpdateResult.Nothing
             return
         }
 

@@ -5,6 +5,8 @@ import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 
 sealed class AppUpdateResult {
 
+    object Nothing : AppUpdateResult()
+
     object Loading : AppUpdateResult()
 
     object EmptyResult : AppUpdateResult()
