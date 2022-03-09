@@ -10,7 +10,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import by.slowar.appsupdater.R
 import by.slowar.appsupdater.common.Constants
-import by.slowar.appsupdater.data.AppUpdateItemBinding
+import by.slowar.appsupdater.databinding.AppUpdateItemBinding
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import by.slowar.appsupdater.ui.updates.states.utils.animateHideProgress
 import by.slowar.appsupdater.ui.updates.states.utils.animateShowProgress
@@ -32,7 +32,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(appsList[position], true)
+        holder.bind(appsList[position])
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
@@ -90,7 +90,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     inner class ViewHolder(private val binding: AppUpdateItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(appItemState: AppItemUiState, refresh: Boolean = false) {
+        fun bind(appItemState: AppItemUiState) {
             when (appItemState) {
                 is AppItemUiState.Empty -> Log.e(Constants.LOG_TAG, "bindPayload: empty")
                 is AppItemUiState.Idle -> handleIdleState(appItemState)
@@ -101,14 +101,10 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
                 is AppItemUiState.CompletedResult -> handleCompletedState(appItemState)
                 is AppItemUiState.ErrorResult -> handleErrorState(appItemState)
             }
-
-            if (refresh) {
-                binding.executePendingBindings()
-            }
         }
 
         private fun handleIdleState(uiState: AppItemUiState.Idle) {
-            binding.appItemState = uiState
+            fillBaseInfo(uiState)
             setStatusText("", uiState.updateSize)
             binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
             binding.updateButton.setOnClickListener { uiState.onUpdateAction() }
@@ -152,8 +148,6 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         }
 
         private fun handleDefaultStateData(uiState: AppItemUiState) {
-            binding.appIcon.setImageDrawable(uiState.icon)
-
             val isShowingFirstProgress = binding.taskProgressBar.visibility != View.VISIBLE &&
                     binding.downloadProgressBar.visibility != View.VISIBLE &&
                     uiState.taskProgressVisible
@@ -182,6 +176,26 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
             }
         }
 
+        private fun fillBaseInfo(uiState: AppItemUiState) {
+            binding.appNameText.text = uiState.appName
+
+            binding.appIcon.scaleX = 1f
+            binding.appIcon.scaleY = 1f
+            if (uiState.icon == null) {
+                binding.appIcon.setImageResource(android.R.drawable.ic_menu_gallery)
+            } else {
+                binding.appIcon.setImageDrawable(uiState.icon)
+            }
+
+            binding.updateInfoText.text = uiState.description
+
+            binding.updateButton.isVisible = true
+            binding.cancelButton.isVisible = false
+
+            binding.taskProgressBar.isVisible = false
+            binding.downloadProgressBar.isVisible = false
+        }
+
         private fun toggleDescriptionVisibility() {
             if (binding.updateInfoText.visibility == View.VISIBLE) {
                 hideDescriptionText()
@@ -191,13 +205,13 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         }
 
         private fun showDescriptionText() {
-            binding.updateInfoText.visibility = View.VISIBLE
+            binding.updateInfoText.isVisible = true
             binding.showInfoButton.rotation = 0f
             binding.showInfoButton.animate().rotation(180f)
         }
 
         private fun hideDescriptionText() {
-            binding.updateInfoText.visibility = View.GONE
+            binding.updateInfoText.isVisible = false
             binding.showInfoButton.animate().rotation(360f)
         }
 
