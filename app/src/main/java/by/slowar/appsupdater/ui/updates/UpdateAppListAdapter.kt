@@ -82,7 +82,9 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     }
 
     private fun checkAppByPackage(packageName: String) =
-        currentlyUpdatingAppId != Constants.EMPTY && appsList[currentlyUpdatingAppId].packageName == packageName
+        currentlyUpdatingAppId != Constants.EMPTY &&
+                currentlyUpdatingAppId < appsList.size &&
+                appsList[currentlyUpdatingAppId].packageName == packageName
 
     private fun getAppIdByPackage(packageName: String) = appsList.indexOfFirst { state ->
         state.packageName == packageName
@@ -119,9 +121,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
             if (uiState is AppItemUiState.Idle) {
                 binding.updateButton.setOnClickListener { uiState.onUpdateAction() }
             }
-            if (uiState.cancelUpdateAvailable) {
-                binding.cancelButton.setOnClickListener { uiState.onCancelAction() }
-            }
+            binding.cancelButton.setOnClickListener { uiState.onCancelAction() }
         }
 
         fun bindUpdate(appItemState: AppItemUiState) {

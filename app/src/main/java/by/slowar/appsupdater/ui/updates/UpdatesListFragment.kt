@@ -133,6 +133,7 @@ class UpdatesListFragment : Fragment() {
     private fun handleUpdateAppState(appUpdateState: AppItemUiState) {
         if (appUpdateState is AppItemUiState.CompletedResult) {
             adapter.removeUpdatingApp()
+            holderListener.onUpdatesListRefresh(adapter.itemCount)
         } else {
             val payload = if (appUpdateState is AppItemUiState.Idle) {
                 null
