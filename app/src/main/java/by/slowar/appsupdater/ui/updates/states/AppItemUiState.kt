@@ -1,6 +1,7 @@
 package by.slowar.appsupdater.ui.updates.states
 
 import android.graphics.drawable.Drawable
+import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import kotlin.math.roundToInt
 
 sealed class AppItemUiState(
@@ -127,4 +128,6 @@ sealed class AppItemUiState(
         false, false, true, false,
         onCancelAction
     )
+
+    fun isUpdating() = this is Pending || this is Initializing || this is Downloading || this is Installing
 }

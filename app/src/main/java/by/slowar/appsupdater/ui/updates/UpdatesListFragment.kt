@@ -100,6 +100,9 @@ class UpdatesListFragment : Fragment() {
                 holderListener.onUpdatesListRefresh(state.result.size)
                 holderListener.onHaveUpdatingApps(false)
             }
+            is AppUpdateResult.RefreshAllResult -> {
+                adapter.setNewAppList(state.result)
+            }
         }
     }
 

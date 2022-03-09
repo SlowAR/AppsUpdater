@@ -14,4 +14,6 @@ sealed class AppUpdateResult {
     data class SuccessResult(val result: List<AppItemUiState>) : AppUpdateResult()
 
     data class ErrorResult(@StringRes val errorId: Int) : AppUpdateResult()
+
+    data class RefreshAllResult(val result: List<AppItemUiState>) : AppUpdateResult()
 }

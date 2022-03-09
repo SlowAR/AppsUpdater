@@ -200,7 +200,7 @@ class UpdatesListViewModel(
 
     private fun setPendingUiStateAll() {
         val pendingUiStates = updateAppsMetadata.map { it.toPendingUiState() }
-        _updateResult.value = AppUpdateResult.SuccessResult(pendingUiStates)
+        _updateResult.value = AppUpdateResult.RefreshAllResult(pendingUiStates)
     }
 
     private fun setIdleUiStateAll() {
@@ -209,7 +209,7 @@ class UpdatesListViewModel(
                 updateApp(pendingState.packageName)
             }
         }
-        _updateResult.value = AppUpdateResult.SuccessResult(idleUiStates)
+        _updateResult.value = AppUpdateResult.RefreshAllResult(idleUiStates)
     }
 
     private fun handleUpdateAppState(appUpdateState: AppUpdateItemStateDto) {

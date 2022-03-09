@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +13,8 @@ import by.slowar.appsupdater.databinding.AppUpdateItemBinding
 import by.slowar.appsupdater.ui.updates.states.AppItemUiState
 import by.slowar.appsupdater.ui.updates.states.utils.animateHideProgress
 import by.slowar.appsupdater.ui.updates.states.utils.animateShowProgress
+import by.slowar.appsupdater.ui.updates.states.utils.idleAppIconScale
+import by.slowar.appsupdater.ui.updates.states.utils.updatingAppIconScale
 import by.slowar.appsupdater.utils.formatBytesValue
 
 class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = ArrayList()) :
@@ -41,7 +42,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
         } else {
             for (payload in payloads) {
                 if (payload == APP_UPDATE_PAYLOAD) {
-                    holder.bind(appsList[position])
+                    holder.bindUpdate(appsList[position])
                 }
             }
         }
@@ -90,24 +91,49 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
     inner class ViewHolder(private val binding: AppUpdateItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(appItemState: AppItemUiState) {
+        fun bind(uiState: AppItemUiState) {
+            binding.appNameText.text = uiState.appName
+
+            val iconScale = if (uiState.isUpdating()) updatingAppIconScale else idleAppIconScale
+            binding.appIcon.scaleX = iconScale
+            binding.appIcon.scaleY = iconScale
+            if (uiState.icon == null) {
+                binding.appIcon.setImageResource(android.R.drawable.ic_menu_gallery)
+            } else {
+                binding.appIcon.setImageDrawable(uiState.icon)
+            }
+
+            binding.taskProgressBar.isVisible = uiState.taskProgressVisible
+            binding.downloadProgressBar.isVisible = uiState.downloadProgressVisible
+
+            setStatusText("", uiState.updateSize)
+
+            binding.showInfoButton.rotation = if (uiState.descriptionVisible) 180f else 0f
+            binding.updateInfoText.text = uiState.description
+            binding.updateInfoText.isVisible = uiState.descriptionVisible
+
+            binding.updateButton.isVisible = uiState.updateAvailable
+            binding.cancelButton.isVisible = uiState.cancelUpdateAvailable
+
+            binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
+            if (uiState is AppItemUiState.Idle) {
+                binding.updateButton.setOnClickListener { uiState.onUpdateAction() }
+            }
+            if (uiState.cancelUpdateAvailable) {
+                binding.cancelButton.setOnClickListener { uiState.onCancelAction() }
+            }
+        }
+
+        fun bindUpdate(appItemState: AppItemUiState) {
             when (appItemState) {
-                is AppItemUiState.Empty -> Log.e(Constants.LOG_TAG, "bindPayload: empty")
-                is AppItemUiState.Idle -> handleIdleState(appItemState)
                 is AppItemUiState.Pending -> handlePendingState(appItemState)
                 is AppItemUiState.Initializing -> handleInitializeState(appItemState)
                 is AppItemUiState.Downloading -> handleDownloadingState(appItemState)
                 is AppItemUiState.Installing -> handleInstallingState(appItemState)
                 is AppItemUiState.CompletedResult -> handleCompletedState(appItemState)
                 is AppItemUiState.ErrorResult -> handleErrorState(appItemState)
+                else -> throw IllegalStateException("Illegal app update UI state: $appItemState")
             }
-        }
-
-        private fun handleIdleState(uiState: AppItemUiState.Idle) {
-            fillBaseInfo(uiState)
-            setStatusText("", uiState.updateSize)
-            binding.showInfoButton.setOnClickListener { toggleDescriptionVisibility() }
-            binding.updateButton.setOnClickListener { uiState.onUpdateAction() }
         }
 
         private fun handlePendingState(uiState: AppItemUiState.Pending) {
@@ -117,7 +143,7 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
 
         private fun handleInitializeState(uiState: AppItemUiState.Initializing) {
             handleDefaultStateData(uiState)
-            setStatusText(R.string.initializing_text, uiState.updateSize)
+            setStatusText(R.string.initializing_text)
         }
 
         private fun handleDownloadingState(uiState: AppItemUiState.Downloading) {
@@ -144,60 +170,28 @@ class UpdateAppListAdapter(private val appsList: MutableList<AppItemUiState> = A
 
         private fun handleErrorState(uiState: AppItemUiState.ErrorResult) {
             handleDefaultStateData(uiState)
-            setStatusText(R.string.update_error, uiState.updateSize)
+            setStatusText(R.string.update_error)
         }
 
         private fun handleDefaultStateData(uiState: AppItemUiState) {
-            val isShowingFirstProgress = binding.taskProgressBar.visibility != View.VISIBLE &&
-                    binding.downloadProgressBar.visibility != View.VISIBLE &&
-                    uiState.taskProgressVisible
-
-            val isHidingLastProgress =
-                !uiState.taskProgressVisible && !uiState.downloadProgressVisible
-
-            if (isShowingFirstProgress) {
+            if (!binding.taskProgressBar.isVisible && uiState.taskProgressVisible) {
                 animateShowProgress(binding.taskProgressBar, binding.appIcon)
-            } else if (isHidingLastProgress) {
-                if (binding.taskProgressBar.visibility == View.VISIBLE) {
-                    animateHideProgress(binding.downloadProgressBar, binding.appIcon)
-                } else {
-                    animateHideProgress(binding.downloadProgressBar, binding.appIcon)
-                }
-            } else {
-                binding.taskProgressBar.isVisible = uiState.taskProgressVisible
-                binding.downloadProgressBar.isVisible = uiState.downloadProgressVisible
+            } else if (binding.taskProgressBar.isVisible && !uiState.taskProgressVisible) {
+                animateHideProgress(binding.taskProgressBar, binding.appIcon)
+            }
+
+            if (!binding.downloadProgressBar.isVisible && uiState.downloadProgressVisible) {
+                animateShowProgress(binding.downloadProgressBar, binding.appIcon)
+            } else if (binding.downloadProgressBar.isVisible && !uiState.downloadProgressVisible) {
+                animateHideProgress(binding.downloadProgressBar, binding.appIcon)
             }
 
             binding.updateButton.isVisible = uiState.updateAvailable
             binding.cancelButton.isVisible = uiState.cancelUpdateAvailable
-
-            if (uiState.cancelUpdateAvailable) {
-                binding.cancelButton.setOnClickListener { uiState.onCancelAction() }
-            }
-        }
-
-        private fun fillBaseInfo(uiState: AppItemUiState) {
-            binding.appNameText.text = uiState.appName
-
-            binding.appIcon.scaleX = 1f
-            binding.appIcon.scaleY = 1f
-            if (uiState.icon == null) {
-                binding.appIcon.setImageResource(android.R.drawable.ic_menu_gallery)
-            } else {
-                binding.appIcon.setImageDrawable(uiState.icon)
-            }
-
-            binding.updateInfoText.text = uiState.description
-
-            binding.updateButton.isVisible = true
-            binding.cancelButton.isVisible = false
-
-            binding.taskProgressBar.isVisible = false
-            binding.downloadProgressBar.isVisible = false
         }
 
         private fun toggleDescriptionVisibility() {
-            if (binding.updateInfoText.visibility == View.VISIBLE) {
+            if (binding.updateInfoText.isVisible) {
                 hideDescriptionText()
             } else {
                 showDescriptionText()
