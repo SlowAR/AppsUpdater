@@ -2,8 +2,8 @@
     <!-- Base application theme. -->
     <style name="Theme.AppsUpdater" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/green</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/green_500</item>
+        <item name="colorPrimaryVariant">@color/grey_200</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/teal_200</item>
@@ -12,6 +12,12 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="android:colorBackground">@color/grey_200</item>
+        <item name="actionBarStyle">@style/UpdaterActionBar</item>
+    </style>
+
+    <style name="UpdaterActionBar" parent="Widget.MaterialComponents.ActionBar.Solid">
+        <item name="background">?attr/colorPrimaryVariant</item>
     </style>
 
     <style name="StatusText" parent="TextAppearance.Material3.BodyLarge"/>

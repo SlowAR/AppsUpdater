@@ -8,6 +8,6 @@
         android:thickness="4dp"
         android:useLevel="true">
 
-        <solid android:color="@color/purple_200" />
+        <solid android:color="?attr/colorPrimary" />
     </shape>
 </rotate>
