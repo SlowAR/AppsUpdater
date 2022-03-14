@@ -76,11 +76,6 @@ class UpdatesListViewModel(
     }
 
     private fun handleCheckForUpdates(updatesList: List<AppUpdateItem>) {
-        Log.e(
-            Constants.LOG_TAG,
-            "Apps updates checked! Apps for update: ${updatesList.size}"
-        )
-
         if (updatesList.isEmpty()) {
             _updateResult.value = AppUpdateResult.EmptyResult
         } else {
@@ -123,10 +118,6 @@ class UpdatesListViewModel(
     }
 
     private fun updateAppsQueue(echo: Boolean = false) {
-        Log.e(
-            Constants.LOG_TAG,
-            "updateAppsQueue(): echo $echo, disposable $appUpdateDisposable, list: ${appsForUpdateQueue.size}"
-        )
         if (appUpdateDisposable != null) {
             return
         }
@@ -148,7 +139,6 @@ class UpdatesListViewModel(
                     finishAppsUpdate()
                 },
                 {
-                    Log.e(Constants.LOG_TAG, "All apps updates completed on client!")
                     finishAppsUpdate()
                 }
             )

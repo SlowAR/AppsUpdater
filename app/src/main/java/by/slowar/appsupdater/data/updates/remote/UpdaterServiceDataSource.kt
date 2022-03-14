@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
-import android.util.Log
-import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.service.UpdaterService
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -59,14 +57,12 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
             serviceMessenger = Messenger(binder)
             isBound = true
             bindServiceSource.onSuccess(Unit)
-            Log.e(Constants.LOG_TAG, "Bound to updater service!")
         }
 
         override fun onServiceDisconnected(componentName: ComponentName?) {
             serviceMessenger = null
             isBound = false
             bindServiceSource.onError(IllegalStateException("Unbound from updater service!"))
-            Log.e(Constants.LOG_TAG, "Unbound from updater service!")
         }
     }
 
@@ -75,12 +71,10 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
 
     private fun startService() {
         if (!isStarted) {
-            Log.e(Constants.LOG_TAG, "Starting updater service...")
             appContext.startService(serviceIntent)
             isStarted = true
         }
         if (!isBound) {
-            Log.e(Constants.LOG_TAG, "Binding to updater service...")
             appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
     }
@@ -140,9 +134,7 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     }
 
     private fun handleAppsForUpdatesResult(data: Bundle) {
-        Log.e(Constants.LOG_TAG, "Received apps for update from service")
         data.getParcelableArrayList<AppUpdateDto>(UpdaterService.CHECK_ALL_FOR_UPDATES_DATA)?.let {
-            Log.e(Constants.LOG_TAG, "Apps for update: ${it.size}")
             checkForUpdatesSource.onSuccess(it)
         }
             ?: checkForUpdatesSource.onError(IllegalStateException("Couldn't receive apps for update"))
@@ -151,10 +143,6 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
     private fun handleUpdateAppStatus(data: Bundle) {
         data.getParcelable<AppUpdateItemStateDto>(UpdaterService.UPDATE_APP_STATUS_DATA)
             ?.let { states ->
-                Log.e(
-                    Constants.LOG_TAG,
-                    "handleUpdateAppStatus(): Receiving status message from service: $states"
-                )
                 when (states) {
                     is AppUpdateItemStateDto.CompletedResult,
                     is AppUpdateItemStateDto.CancelledResult -> {
@@ -184,8 +172,6 @@ class UpdaterServiceDataSourceImpl @Inject constructor(
         if (data != null) {
             message.data = data
         }
-
-        Log.e(Constants.LOG_TAG, "Sending message to updater service: $message")
 
         serviceMessenger?.send(message)
     }

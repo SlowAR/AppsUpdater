@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.*
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.di.components.DaggerUpdaterServiceComponent
@@ -70,7 +69,6 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
 
     override fun onCreate() {
         super.onCreate()
-        Log.e(Constants.LOG_TAG, "Updater service onCreate()")
         DaggerUpdaterServiceComponent.create().inject(this)
         serviceManager.prepare(this)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -79,12 +77,10 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
     }
 
     override fun onBind(intent: Intent): IBinder {
-        Log.e(Constants.LOG_TAG, "Updater service onBind()")
         return serviceMessenger.binder
     }
 
     private fun checkAllForUpdates(data: Bundle) {
-        Log.e(Constants.LOG_TAG, "Updater service checkAllForUpdates()")
         data.getStringArrayList(CHECK_ALL_FOR_UPDATES_DATA)?.let { packages ->
             serviceManager.checkAllForUpdates(packages)
         }
@@ -164,7 +160,6 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         }
 
         val message = obtainMessage(requestId, data)
-        Log.e(Constants.LOG_TAG, "Sending message to client: $message")
         lastClientMessenger?.send(message)
     }
 
@@ -175,8 +170,6 @@ class UpdaterService : Service(), UpdaterServiceManagerImpl.Listener {
         isLastMessage: Boolean
     ) {
         val message = obtainMessage(statusId, data)
-
-        Log.e(Constants.LOG_TAG, "Sending status message to client: $message")
 
         var removedRequestId = Constants.EMPTY
         if (isLastMessage) {

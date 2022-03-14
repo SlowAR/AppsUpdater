@@ -48,7 +48,6 @@ class UpdaterServiceManagerImpl @Inject constructor(
     }
 
     override fun checkAllForUpdates(packages: List<String>) {
-        Log.e(Constants.LOG_TAG, "checkAllForUpdates: $checkForUpdatesDisposable")
         if (checkForUpdatesDisposable != null) {
             return
         }

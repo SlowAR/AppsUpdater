@@ -1,7 +1,5 @@
 package by.slowar.appsupdater.data.updaterservice
 
-import android.util.Log
-import by.slowar.appsupdater.common.Constants
 import by.slowar.appsupdater.data.updates.remote.AppUpdateDto
 import by.slowar.appsupdater.data.updates.remote.AppUpdateItemStateDto
 import io.reactivex.Observable
@@ -161,8 +159,6 @@ class FakeUpdaterServiceRepository @Inject constructor() : UpdaterServiceReposit
             cachedAppsForUpdate.remove(app)
         }
         cancelUpdatesLock.unlock()
-
-        Log.e(Constants.LOG_TAG, "App update completed on service!")
     }
 
     private fun checkForCancellation(
